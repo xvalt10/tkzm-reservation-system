@@ -98,7 +98,7 @@ local.properties
 .idea/**/gradle.xml
 **/.idea/
 
-**/dist/
+**/build/
 **/node/
 **/node_modules/
 **/src/main/resources/static/
@@ -228,3 +228,6 @@ buildNumber.properties
 .classpath
 
 # End of https://www.toptal.com/developers/gitignore/api/java,intellij,eclipse,maven
+
+.mvn/
+
