@@ -1,12 +1,10 @@
 import PropTypes from 'prop-types';
-import {TIMESLOT_STATES} from "../App";
 import TimeslotService from "../services/TimeslotService";
+import {accountService as userAccountService} from "../services/auth/AuthService";
 
 const Timeslot = ({slot, onSelected}) => {
-    const startDate = new Date(slot.startTime);
-    const endDate = new Date(slot.endTime);
     const isSelectedClass = slot.selected ? 'selected' : '';
-    const isReservedClass = TimeslotService.isSlotReserved(slot) ? 'reserved' : slot.text?'': 'free';
+    const isReservedClass = TimeslotService.isSlotReserved(slot) ? (slot.userAccount.userId === userAccountService.accountValue.userId ? 'my-reservation':'reserved') : (slot.text ? '': 'free');
     return (
 
         <div className={`timeslot ${isSelectedClass} ${isReservedClass}`} style={{
@@ -16,7 +14,7 @@ const Timeslot = ({slot, onSelected}) => {
         }} onClick={() => {
             onSelected(slot)
         }}>
-            <span>{slot.text ? slot.text : slot.userAccount ? `Obsadené (${slot.userAccount.username})` : 'Rezervuj'}</span>
+            <span>{slot.text}{!slot.text && slot.userAccount ? (slot.userAccount.userId === userAccountService.accountValue.userId  ? 'Moja rezervácia':`Obsadené (${slot.userAccount.username})`): !slot.text ? 'Voľné':''}</span>
         </div>
     );
 }

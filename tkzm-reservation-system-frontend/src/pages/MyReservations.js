@@ -1,4 +1,4 @@
-import React, {Component, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
 import {accountService} from "../services/auth/AuthService";
 import UserReservationSummary from "../components/UserReservationSummary";
@@ -6,14 +6,12 @@ import TimeslotService from "../services/TimeslotService";
 import Loader from "react-loader-spinner";
 import {useNavigate} from "react-router-dom";
 import UserMessage from "../components/UserMessage";
-import * as Constants from "constants";
 import {BACKEND_BASE_URL} from "../services/Constants";
 
 const MyReservations = () => {
     const navigate = useNavigate();
     const [reservedTimeslots, setReservedTimeslots] = useState({});
     const [userMessage, setUserMessage] = useState(null);
-    const [timeslotsFromBackend, setTimeslotsFromBackend] = useState({});
     const [showSpinner, setShowSpinner] = useState(false);
     const [error, setError] = useState(null);
     const [empty, setEmpty] = useState(false);
@@ -23,16 +21,15 @@ const MyReservations = () => {
             await fetch(`${BACKEND_BASE_URL}/timeslots/user/${accountService.accountValue.userId}`)
                 .then(res => res.json())
                 .then(timeslotsFromServer => {
-                        //setTimeslotsFromBackend(timeslotsFromServer);
                         const groupedTimeslots = TimeslotService.groupReservedTimeslots(timeslotsFromServer);
-                        if (Object.keys(groupedTimeslots).length == 0) {
+                        if (Object.keys(groupedTimeslots).length === 0) {
                             setEmpty(true)
                         } else {
                             setReservedTimeslots(groupedTimeslots)
                         }
                     }
                 ).catch(error => {
-                    setError(error);
+                    setError(error.message);
                     console.log(error)
                 })
         }
@@ -54,13 +51,13 @@ const MyReservations = () => {
                     setShowSpinner(false);
                     const remainingtimeslots = TimeslotService.removeFromReservedTimeslots(reservedTimeslots, slotIdsToCancel);
                     setReservedTimeslots(remainingtimeslots);
-                    if (Object.keys(remainingtimeslots).length == 0) {
+                    if (Object.keys(remainingtimeslots).length === 0) {
                         setEmpty(true)
                     }
                     setUserMessage(`Rezervácia dvorca ${data[0].courtnumber} od ${TimeslotService.formatDate(new Date(data[0].startTime))} do ${TimeslotService.formatDate(new Date(data[data.length - 1].endTime))} bola zrušená.`);
                 }
             ).catch(error => {
-            setError(error);
+            setError(error.message);
             console.log(error)
         })
     }
@@ -74,7 +71,7 @@ const MyReservations = () => {
     }, [])
     return (
         <div>
-            <h3>Moje rezervácie</h3>
+            <h3 className="title">Moje rezervácie</h3>
             {error && <UserMessage message={error} color={'indianred'}/>}
             {(userMessage || showSpinner) && <div className={'user-message'}>
                 {showSpinner && <Loader

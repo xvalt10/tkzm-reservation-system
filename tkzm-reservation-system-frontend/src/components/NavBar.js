@@ -1,56 +1,55 @@
-import {
-    Nav,
-    NavLogo,
-    NavLink,
-    Bars,
-    NavMenu,
-    NavBtn,
-    NavBtnLink,
-} from "./NavBarElements";
 import logo from '../images/tkzm_logo3.png';
 import {accountService} from "../services/auth/AuthService";
-import {useNavigate} from "react-router-dom";
+import {NavLink, useNavigate} from "react-router-dom";
 import {useEffect, useState} from "react";
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUser} from '@fortawesome/free-solid-svg-icons'
+import { faSignOutAlt} from '@fortawesome/free-solid-svg-icons'
 const Navbar = () => {
     const navigate = useNavigate();
+    const [showMenuItems,setShowMenuItems] = useState(false);
     const [account, setAccount] = useState(null);
     const logout = () => {
         accountService.logout();
         navigate("/");
     }
-    const navigateTo = (path) => {
-        navigate(path);
+    const toggleMenu = () => {
+        setShowMenuItems(!showMenuItems);
     }
     useEffect(() => {
         accountService.account.subscribe(x => setAccount(x));
     }, []);
     return (
         <>
-            <Nav>
-                <NavLogo to="/">
+            <nav className="navbar is-tablet is-spaced">
+                <div className="container">
+                    <div className="navbar-brand"><a href="/" className="navbar-item active"><img
+                        src={logo} alt="Favicon.io Logo" style={{height:'80px'}}/><span className={'title is-5'}>TK ZM - Rezervácie</span></a>
+                        <div data-target="navbar" className={`navbar-burger burger ${showMenuItems?'is-active':''}`} onClick={toggleMenu}>
+                            <span></span><span></span><span></span></div>
+                    </div>
+                    { account && <div id="navbar" className={`navbar-menu ${showMenuItems?'is-active':''}`}>
+                        <div className="navbar-start has-text-weight-bold">
+                            <NavLink to="/reservation" className="navbar-item">Rozpis</NavLink>
+                            <NavLink to="/user-reservations" className="navbar-item">Moje rezervácie</NavLink>
+                        </div>
 
-                    <img src={logo} style={{width: '80px', height: '80px', padding: '5px'}}/>
+                        <div className="navbar-end">
+                            <div className="navbar-item">
+                                <div className="field is-grouped">
+                                    <p className="control">
 
-                        <h3 style={{margin: 'auto'}}>TK Zlaté Moravce - Rezervačný systém</h3>
-
-                </NavLogo>
-
-                <Bars/>
-                {account &&
-                <NavMenu>
-                    <NavBtn>
-                        <button className={'btn'} onClick={()=>navigateTo("/user-reservations")}>Moje rezervácie</button>
-                    </NavBtn>
-                    <NavBtn>
-                        <button className={'btn'} onClick={()=>navigateTo("/reservation")}>Rozpis</button>
-                    </NavBtn>
-                    <NavBtn>
-                        <button className={'btn'} onClick={logout}>Odhlás sa</button>
-                    </NavBtn>
-
-                </NavMenu>}
-            </Nav>
+                                        <div className="navbar-item is-default"><FontAwesomeIcon icon={faUser} style={{marginRight:'5px'}}/>{account.name}</div>
+                                    </p>
+                                    <p className="control">
+                                        <button onClick={logout} className="button is-default"><FontAwesomeIcon icon={faSignOutAlt} style={{marginRight:'5px'}}/> Odhlásenie</button>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>}
+                </div>
+            </nav>
         </>
     );
 };

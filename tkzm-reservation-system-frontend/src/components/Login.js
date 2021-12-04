@@ -3,7 +3,6 @@ import React, {useEffect, useState} from 'react';
 import { accountService } from '../services/auth/AuthService';
 import {useNavigate} from "react-router-dom";
 import Loader from "react-loader-spinner";
-import TimeslotService from "../services/TimeslotService";
 
 const Login = () => {
     let navigate = useNavigate();
@@ -24,29 +23,28 @@ const Login = () => {
     }
 
     return (
-        <div className="col-md-6 offset-md-3 mt-5 text-center">
-            <div className="card">
-                <h3>Prihlásenie do systému</h3>
-                <p className="card-header">Pre prihlasénie do rezervačného sytému kliknite na tlačidlo "Prihlásenie cez Facebook"</p>
-                <div className="card-body">
-                    <button className="btn btn-facebook" onClick={()=>onLoginButtonClick()}>
+        <>
+
+                <h3 className="title">Rezervačný systém TK Zlaté Moravce</h3>
+                <p style={{marginBottom:'10px'}}>Pre prihlasénie do rezervačného sytému kliknite na tlačidlo "Prihlásenie cez Facebook"</p>
+
+                    <button className="button is-info" onClick={()=>onLoginButtonClick()}>
                         <div style={{display: 'flex'}}>
                             {showSpinner && <Loader
                                 type="TailSpin"
                                 color="#00BFFF"
-                                height={'30px'}
-                                width={'30px'}
+                                height={'20px'}
+                                width={'20px'}
                             />}
                             <div style={{marginLeft: '10px'}}>
-                                <i className="fa fa-facebook mr-1"></i>
                                 Prihlásenie cez Facebook
                             </div>
                         </div>
 
                     </button>
-                </div>
-            </div>
-        </div>
+
+
+        </>
     );
 }
 

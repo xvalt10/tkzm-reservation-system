@@ -11,12 +11,13 @@ const Timetable = ({timeslots, onSelected}) => {
             display: 'grid',
             overflowX: 'scroll',
             padding:'2px',
+            marginBottom:'10px',
             gridTemplateColumns: `repeat(${columnCount})`,
             gridTemplateRows: `repeat(${rowCount})`,
 
         }}>
             {Object.keys(timeslots).map((courtNo, rowIndex) => {
-                return <Timeslot key={'time_row' + rowIndex} slot={{row: rowIndex + 2, column: 1, text: `Court #${courtNo}`}}/>
+                return <Timeslot key={'time_row' + rowIndex+courtNo} slot={{row: rowIndex + 2, column: 1, text: `Kurt ${courtNo}`}}/>
             })}
 
             {timeslots[Object.keys(timeslots)[0]].map((slot, columnIndex) => {
@@ -32,7 +33,7 @@ const Timetable = ({timeslots, onSelected}) => {
                 return (
                     <>
                         {timeslots[courtNo].map((slot, columnIndex) => {
-                            return <Timeslot key={'t' + columnIndex}
+                            return <Timeslot key={'t' + columnIndex+courtNo}
                                              slot={{...slot, row: rowIndex + 2, column: columnIndex + 2}} onSelected={onSelected}/>
                         })}
                     </>

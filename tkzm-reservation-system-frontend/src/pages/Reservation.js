@@ -6,10 +6,11 @@ import TimeslotService from "../services/TimeslotService";
 import {useNavigate} from "react-router-dom";
 import UserMessage from "../components/UserMessage";
 import {BACKEND_BASE_URL} from "../services/Constants";
+import Loader from "react-loader-spinner";
 
 const Reservation = ({}) => {
     const navigate = useNavigate();
-    const [timeslots, setTimeslots] = useState({});
+    const [timeslots, setTimeslots] = useState(null);
     const [timeslotsPerDay, setTimeslotsPerDay] = useState({});
     const [reservationStatus, setReservationStatus] = useState(null);
     const [selectedTimeslot, setSelectedTimeslot] = useState(null);
@@ -18,9 +19,8 @@ const Reservation = ({}) => {
     const [error, setError] = useState(null);
 
 
-
     function displayTimeslotsForSelectedDay(timeslots,date) {
-        const datetokens = date.split(".")
+        const datetokens = date.split(" ")[0].split(".")
         const day = +datetokens[0]
         const month = +datetokens[1]
         setTimeslotsPerDay(TimeslotService.getTimeslotsByDayMonth(timeslots, day, month));
@@ -33,7 +33,7 @@ const Reservation = ({}) => {
                 .then(res => res.json())
                 .then(timeslotsFromServer => {slots = timeslotsFromServer;
                     setTimeslots(timeslotsFromServer)}
-                ).catch(error => setError(error))
+                ).catch(error => setError(error.message))
 
             await fetch(`${BACKEND_BASE_URL}/timeslots/uniqueDates`)
                 .then(res => res.json())
@@ -41,7 +41,7 @@ const Reservation = ({}) => {
                         setDatesForReservation(dates)
                         displayTimeslotsForSelectedDay(slots, selectedDate || dates[0]);
                     }
-                ).catch(error => setError(error))
+                ).catch(error => setError(error.message))
 
         }
         getTimetableData()
@@ -59,9 +59,12 @@ const Reservation = ({}) => {
         displayTimeslotsForSelectedDay(timeslots,datesForReservation[event.target.selectedIndex]);
     }
     const onTimeslotSelected = (timeslot) => {
+console.log(timeslot);
+console.log(accountService.accountValue);
+        if(!timeslot.userAccount || timeslot.userAccount.userId === accountService.accountValue.userId){
         timeslot.selected=true
         setSelectedTimeslot(timeslot)
-        setTimeslotsPerDay(TimeslotService.markTimeslots(timeslotsPerDay,[timeslot.slotId]))
+        setTimeslotsPerDay(TimeslotService.markTimeslots(timeslotsPerDay,[timeslot.slotId]))}
     }
 
     const onEndTimeChange = (slotIdsToMark) =>{
@@ -69,9 +72,11 @@ const Reservation = ({}) => {
         setTimeslotsPerDay(TimeslotService.markTimeslots(timeslotsPerDay,slotIdsToMark))
     }
 
-    const onReservation = ({courtnumber, startTime, endTime, success, operation}) => {
+    const onReservation = ({courtnumber, startTime, endTime, errorMessage, operation}) => {
         loadTimetableData();
-        if(success){
+        if(errorMessage){
+            setError(errorMessage);
+        }else{
             if(operation === 'canceling'){
                 setReservationStatus(`Rezervácia dvorca ${courtnumber} od ${startTime} do ${endTime} bola zrušená.`);
             }else{
@@ -84,9 +89,16 @@ const Reservation = ({}) => {
 
     return (
         <div>
-            <h3>Aktuálna obsadenosť dvorcov</h3>
+            <h3 className={'title'}>Aktuálna obsadenosť dvorcov</h3>
+            {!timeslots && <h4 className={'user-message'}><Loader
+                type="TailSpin"
+                color="#00BFFF"
+                height={'30px'}
+                width={'30px'}/>Dáta sa načítavajú</h4>
+            }
+
             {error && <UserMessage message={error} color={'indianred'}/>}
-            <div className='form-control'>
+            {timeslots && <div className='form-control'>
                 <label>Dátum rezervácie</label>
 
                 <select onChange={(e) => onReservationDateChanged(e)}>
@@ -95,9 +107,9 @@ const Reservation = ({}) => {
                             return <option>{uniqueDate}</option>
                         })}</>
                 </select>
-            </div>
+            </div>}
             {reservationStatus && <h4 className={'user-message'}>{reservationStatus}</h4>}
-            <Timetable timeslots={timeslotsPerDay} onSelected={onTimeslotSelected}/>
+            {timeslots && <Timetable timeslots={timeslotsPerDay} onSelected={onTimeslotSelected}/>}
             {selectedTimeslot && <ReserveTimeslotForm timeslots={timeslotsPerDay} selectedTimeslot={selectedTimeslot}
                                                       onReservation={onReservation} onEndTimeChange={onEndTimeChange}/>}
         </div>

@@ -1,10 +1,9 @@
 import React, {useEffect, useState} from 'react';
-import PropTypes from 'prop-types';
 import TimeslotService from "../services/TimeslotService";
 import {accountService} from "../services/auth/AuthService";
 import Loader from "react-loader-spinner";
 import UserMessage from "./UserMessage";
-import {BACKEND_BASE_URL, Constants} from "../services/Constants";
+import {BACKEND_BASE_URL} from "../services/Constants";
 
 const ReserveTimeslotForm = ({timeslots, selectedTimeslot, onReservation, onEndTimeChange}) => {
     const [endTime, setEndTime] = useState(TimeslotService.formatDate(new Date(selectedTimeslot.endTime)))
@@ -45,23 +44,31 @@ const ReserveTimeslotForm = ({timeslots, selectedTimeslot, onReservation, onEndT
         fetch(backendURL, requestOptions)
             .then(response => response.json())
             .then(data => {
+
                 setSlotIdsToReserve([]);
+                if(data.status>400){
+                    onReservation({
+                        errorMessage: data.message,
+                    })
+                }else{
                 onReservation({
                     courtnumber: selectedTimeslot.courtnumber,
                     startTime: startTime,
                     endTime: endTime,
-                    success: true,
+                    errorMessage: null,
                     operation: TimeslotService.isSlotReserved(selectedTimeslot) ? 'canceling' : 'reservation'
-                })
+                })}
                 setShowSubmitButtonLoad(false);
             }).catch(
-                error=>{setError(error);console.log(error)});
+                error=>{setError(error);
+                    console.log(error)});
     }
     return (
         <div className={'containerTimeslotForm'}>
-            {error && <UserMessage message={error} color={'indianred'}/>}
+
             <form className='reserve-court-form' onSubmit={onSubmit}>
-                <h3>{TimeslotService.isSlotReserved(selectedTimeslot) ? 'Formulár na zrušenie rezervácie' : 'Formulár na zadanie rezervácie'}</h3>
+                {error && <UserMessage message={error} color={'indianred'}/>}
+                <h3 className="title is-5">{TimeslotService.isSlotReserved(selectedTimeslot) ? 'Formulár na zrušenie rezervácie' : 'Formulár na zadanie rezervácie'}</h3>
                 <div className='form-control'>
                     <label>Dvorec číslo</label>
                     <input
@@ -86,7 +93,7 @@ const ReserveTimeslotForm = ({timeslots, selectedTimeslot, onReservation, onEndT
                         onChange={(e) => onReservationEndTimeChange(e)}
                     >
                         <>
-                            {timeslotsAfterSelectedTimeslot.length == 0 ?
+                            {timeslotsAfterSelectedTimeslot.length === 0 ?
                                 <option>{TimeslotService.formatDate(new Date(selectedTimeslot.endTime))}</option>
                                 :
                                 timeslotsAfterSelectedTimeslot.map((timeslot, index) => {
@@ -98,8 +105,9 @@ const ReserveTimeslotForm = ({timeslots, selectedTimeslot, onReservation, onEndT
                 </div>
 
                 {/*<input className={'btn'} type='submit' value className='btn btn-block'/>*/}
-                <button className="btn" onClick={onSubmit}>
-                    <div style={{display: 'flex'}}>
+                <div style={{display: 'flex', justifyContent: 'center'}}>
+                <button className="button is-rounded is-info" onClick={onSubmit}>
+                    <div style={{display: 'flex', alignItems: 'center'}}>
                         {showSubmitButtonLoad && <Loader
                             type="TailSpin"
                             color="#00BFFF"
@@ -109,6 +117,7 @@ const ReserveTimeslotForm = ({timeslots, selectedTimeslot, onReservation, onEndT
                         <div style={{marginLeft: '10px'}}>{TimeslotService.isSlotReserved(selectedTimeslot) ? 'Zrušiť rezerváciu dvorca' : 'Rezervovať dvorec'}</div>
                     </div>
                 </button>
+                </div>
             </form>
         </div>
 

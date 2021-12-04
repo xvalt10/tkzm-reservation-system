@@ -4,12 +4,14 @@ import Navbar from "../components/NavBar";
 const Layout = () => {
 
     return (
-        <div className={'container'}>
+        <div >
 
             <Navbar/>
 
-            <div className="content">
+            <div className="container">
+                <div className="box">
                 <Outlet />
+                </div>
             </div>
         </div>
     );

@@ -30,7 +30,7 @@ const UserReservationSummary = ({reservedTimeslots, onCancellation}) => {
                 <div className={'flex-row first'}></div>
 
             </div>
-            {Object.keys(reservedTimeslots).map((courtNumber,i) => {
+            {Object.keys(reservedTimeslots).map((courtNumber) => {
                 return (
                     reservedTimeslots[courtNumber].map((slotIdsArray, index) => {
                         return (<div className={'flex-table row'}>
@@ -40,7 +40,7 @@ const UserReservationSummary = ({reservedTimeslots, onCancellation}) => {
                             <div
                                 className={'flex-row'}>{TimeslotService.formatDate(new Date(slotIdsArray[slotIdsArray.length - 1].endTime))}</div>
                             <div className={'flex-row first'}>
-                                <button id={index} className="btn" data-slots={slotIdsArray.map(slot => slot.slotId)}
+                                <button id={index} className="button is-info" data-slots={slotIdsArray.map(slot => slot.slotId)}
                                         onClick={cancelReservation}>
                                     {/*<div style={{display: 'flex'}}>
                                         {spinnerStatuses[index]!==false && <Loader
