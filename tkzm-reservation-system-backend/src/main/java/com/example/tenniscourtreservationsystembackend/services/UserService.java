@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/users")
-@CrossOrigin(origins = "https://localhost:3000")
 public class UserService {
 
     private final UserAccountRepository userAccountRepository;
@@ -41,9 +40,11 @@ public class UserService {
                 userAccount.setPassword(password);
             }
             userAccount.setEnabled(true);
+
             UserRole role = new UserRole();
             role.setUserAccount(userAccount);
             role.setRole("ROLE_USER");
+            userAccount.setUserRole(role);
             return userAccountRepository.save(userAccount);
         }
     }

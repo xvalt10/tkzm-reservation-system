@@ -66,7 +66,7 @@ public class ScheduledJobs {
 			currentDate.add(Calendar.DATE, 1);
 		}
 
-		for (int i = 0; i < 10-daysBetween; i++) {
+		for (int i = 0; i < 14-daysBetween; i++) {
 			System.out.println("Adding slots for "+currentDate.getTime());
 			int day=currentDate.get(Calendar.DAY_OF_MONTH);
 			int month=currentDate.get(Calendar.MONTH);
