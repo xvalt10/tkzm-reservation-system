@@ -10,15 +10,23 @@ const Timetable = ({timeslots, onSelected}) => {
         <div style={{
             display: 'grid',
             overflowX: 'scroll',
-            padding:'2px',
+            padding:'1px',
             marginBottom:'10px',
             gridTemplateColumns: `repeat(${columnCount})`,
             gridTemplateRows: `repeat(${rowCount})`,
 
         }}>
+         {/*   <div className={`sticky-left`} style={{
+                gridRowStart: 1, gridRowEnd: 1,
+                gridColumnStart: 1, gridColumnEnd: 1, background:'blue'}}
+
+            >fsdfdss</div>*/}
+            <Timeslot key={'topleft'} slot={{row: 1, column: 1, text: ` `}}/>
             {Object.keys(timeslots).map((courtNo, rowIndex) => {
                 return <Timeslot key={'time_row' + rowIndex+courtNo} slot={{row: rowIndex + 2, column: 1, text: `Kurt ${courtNo}`}}/>
             })}
+
+
 
             {timeslots[Object.keys(timeslots)[0]].map((slot, columnIndex) => {
 

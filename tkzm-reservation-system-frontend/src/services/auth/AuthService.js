@@ -3,6 +3,7 @@ import axios from 'axios';
 
 import {history} from '../BrowserHistory';
 import {BACKEND_BASE_URL} from "../Constants";
+import {Auth} from "aws-amplify";
 
 const baseUrl = `${process.env.REACT_APP_API_URL}/accounts`;
 const accountSubject = new BehaviorSubject(null);
@@ -12,6 +13,7 @@ export const accountService = {
     login,
     apiAuthenticate,
     logout,
+    accountSubject: accountSubject,
     account: accountSubject.asObservable(),
     authenticationError: errorSubject.asObservable(),
     get accountValue() {
@@ -64,11 +66,21 @@ async function apiAuthenticate(accessToken) {
 
 
 function logout() {
+    async function signOut() {
+        try {
+            await Auth.signOut();
+        } catch (error) {
+            console.log('error signing out: ', error);
+        }
+    }
+
+    accountSubject.next(null);
+/*
     console.log('logging out.')
     // revoke app permissions to logout completely because FB.logout() doesn't remove FB cookie
     window.FB.api('/me/permissions', 'delete', null, () => window.FB.logout());
-    stopAuthenticateTimer();
-    accountSubject.next(null);
+    stopAuthenticateTimer();*/
+
 }
 
 // helper methods

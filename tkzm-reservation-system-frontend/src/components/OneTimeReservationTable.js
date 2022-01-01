@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import TimeslotService from "../services/TimeslotService";
 
 
-const UserReservationSummary = ({reservedTimeslots, onCancellation}) => {
+const OneTimeReservationTable = ({reservedTimeslots, onCancellation}) => {
     const [spinnerStatuses, setSpinnerStatuses] = useState([]);
     useEffect(() => {
         const spinnerDefaultStatuses = [];
@@ -63,6 +63,6 @@ const UserReservationSummary = ({reservedTimeslots, onCancellation}) => {
 
 }
 
-UserReservationSummary.propTypes = {};
+OneTimeReservationTable.propTypes = {};
 
-export default UserReservationSummary;
+export default OneTimeReservationTable;

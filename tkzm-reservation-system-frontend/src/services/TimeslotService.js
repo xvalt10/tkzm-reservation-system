@@ -1,4 +1,13 @@
+import {BehaviorSubject} from "rxjs";
+const reservationCountSubject = new BehaviorSubject(0);
+
 const TimeslotService = {
+    getReservationCountObservable: function(){
+        return reservationCountSubject.asObservable();
+    },
+    getReservationCountValueSubject: function(){
+        return reservationCountSubject;
+    },
     removeFromReservedTimeslots: function (timeslots, slotIdsToRemove) {
         let groupedTimeslots = {}
         Object.keys(timeslots).forEach(courtNo => {
@@ -38,6 +47,14 @@ const TimeslotService = {
             slotIdsForCurrentReservation = [];
         })
         return groupedTimeslots
+    },
+    countGroupedTimeslots: function (timeslots) {
+        let counter = 0;
+        Object.keys(timeslots).forEach(courtNo => {
+            timeslots[courtNo].forEach(timeslotArray => {
+                counter ++;
+            })});
+            return counter;
     },
     getTimeslotsByDayMonth: function (timeslots, day, month) {
         let filteredTimeslots = {}
@@ -141,11 +158,26 @@ const TimeslotService = {
             return `${this.formatDateShort(startDate)}-${this.formatDateShort(endDate)}`
         },
     formatDateShort: function (date) {
-        return `${date.getHours() + 1}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`
+        return `${date.getHours()}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`
+    },
+    getDayOfWeek: function(date){
+       return date.toLocaleDateString("sk-SK", { weekday: 'long' });
+    },
+    formatDateMonthDay: function (date){
+        date = new Date(Date.parse(date))
+        return `${date.getDate()}.${date.getMonth() + 1}`
     },
     formatDate: function (date) {
-        return `${date.getDate()}.${date.getMonth() + 1} ${date.getHours() + 1}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`
+        return `${date.getDate()}.${date.getMonth() + 1} ${date.getHours()}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`
     },
+    formatDateLongTermReservation: function(hours,minutes, dayofweek){
+        if(!isNaN(dayofweek)){
+            const daysOfWeek = ['pondelok','utorok', 'streda', 'štvrtok', 'piatok', 'sobota', 'nedeľa']
+            dayofweek =daysOfWeek[dayofweek-1]
+        }
+        return `${dayofweek} ${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+    },
+
     isSlotReserved: function (timeslot) {
         return timeslot.userAccount != null;
     }

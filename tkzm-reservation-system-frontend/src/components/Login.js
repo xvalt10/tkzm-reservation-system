@@ -1,51 +1,79 @@
 import React, {useEffect, useState} from 'react';
 
-import { accountService } from '../services/auth/AuthService';
+import {accountService} from '../services/auth/AuthService';
 import {useNavigate} from "react-router-dom";
 import Loader from "react-loader-spinner";
+import SignInForm from "./SignInForm";
+import SignUpForm from "./SignUpForm";
 
 const Login = () => {
     let navigate = useNavigate();
-    const [showSpinner,setShowSpinner]=useState(false);
-    const [error,setError]=useState(null);
+    const [showSignUpForm, setShowSignUpForm] = useState(false);
+    const [showSignInForm, setShowSignInForm] = useState(false);
+
+    let signUpSelectedClass = showSignUpForm ? 'is-info' : '';
+    let signInSelectedClass = showSignInForm ? 'is-info' : '';
+
+
+    const toggleShowSignUpForm = () => {
+        setShowSignUpForm(true);
+        setShowSignInForm(false);
+    }
+
+    const toggleShowSignInForm = () => {
+        setShowSignUpForm(false);
+        setShowSignInForm(true);
+    }
+
     useEffect(() => {
         // redirect to home if already logged in
         if (accountService.accountValue) {
             navigate('/reservation');
         }
 
-        accountService.authenticationError.subscribe(error=>{setError(error); if(error)setShowSpinner(false)})
-    }, [showSpinner]);
+    }, []);
 
-    const onLoginButtonClick = () => {
-        setShowSpinner(true);
-        accountService.login();
-    }
 
     return (
         <>
+            <h3 className="title">Rezervačný systém TK Zlaté Moravce</h3>
+            <div className={'columns'}>
 
-                <h3 className="title">Rezervačný systém TK Zlaté Moravce</h3>
-                <p style={{marginBottom:'10px'}}>Pre prihlasénie do rezervačného sytému kliknite na tlačidlo "Prihlásenie cez Facebook"</p>
 
-                    <button className="button is-info" onClick={()=>onLoginButtonClick()}>
-                        <div style={{display: 'flex'}}>
-                            {showSpinner && <Loader
-                                type="TailSpin"
-                                color="#00BFFF"
-                                height={'20px'}
-                                width={'20px'}
-                            />}
-                            <div style={{marginLeft: '10px'}}>
-                                Prihlásenie cez Facebook
-                            </div>
+                <div data-v-23847e07="" className={`column is-flex ${signUpSelectedClass}`}>
+                    <a data-v-23847e07=""  onClick={toggleShowSignUpForm}
+                       className="card is-rounded">
+                        <div className="card-image">
+
                         </div>
+                        <div className="card-content">
+                            <div className="content"><p className="title is-4">Nový používateľ</p><p>
+                                Prejsť na registračný formulár
+                            </p></div>
+                        </div>
+                    </a>
+                </div>
 
-                    </button>
+                <div data-v-23847e07="" className={`column is-flex ${signInSelectedClass}`}>
+                    <a data-v-23847e07=""  onClick={toggleShowSignInForm}
+                       className="card is-rounded">
+                        <div className="card-image">
 
+                        </div>
+                        <div className="card-content">
+                            <div className="content"><p className="title is-4">Existujúci používateľ</p><p>
+                                Prihlásiť sa do systému
+                            </p></div>
+                        </div>
+                    </a>
+                </div>
 
+            </div>
+
+            {showSignInForm && <SignInForm/>}
+            {showSignUpForm && <SignUpForm/>}
         </>
     );
 }
 
-export { Login };
+export {Login};

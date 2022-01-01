@@ -148,6 +148,29 @@ body {
     margin: 10px 0px;
 }
 
+.sticky-left {
+    position: sticky;
+    left: 0;
+}
+
+
+.flex-row-container{
+    display:flex;
+    flex-direction: row;
+}
+
+.flex-column-container{
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+}
+
+.is-info {
+    background-color: #3e8ed0;
+    border-color: transparent;
+    color: #fff
+}
+
 /*---------------------*/
 .table-container {
     display: block;
@@ -173,6 +196,15 @@ body {
 .flex-table.row:nth-child(odd) .flex-row {
     background: #f4f2f1;
 }
+
+.flex-table:first-of-type .flex-row2 {
+    background: #1976D2;
+    color: white;
+    border-color: #1565C0;
+}
+.flex-table.row:nth-child(odd) .flex-row2 {
+    background: #f4f2f1;
+}
 .flex-table:hover {
     background: #F5F5F5;
     transition: 500ms;
@@ -184,9 +216,16 @@ body {
     border-right: solid 1px #d9d9d9;
     border-bottom: solid 1px #d9d9d9;
 }
+.flex-row2 {
+    width: calc(100% / 5);
+    text-align: center;
+    padding: 0.5em 0.5em;
+    border-right: solid 1px #d9d9d9;
+    border-bottom: solid 1px #d9d9d9;
+}
 .column {
     display: flex;
-    flex-flow: column wrap;
+    /*flex-flow: column wrap;*/
     width: 75%;
     padding: 0;
 }
@@ -198,7 +237,7 @@ body {
     border: 0;
     border-bottom: solid 1px #d9d9d9;
 }
-.column .flex-row:hover {
+.column .flex-row,.flex-row2:hover {
     background: #F5F5F5;
     transition: 500ms;
 }
@@ -212,7 +251,13 @@ body {
     .flex-row {
         width: calc(100% / 3);
     }
+    .flex-row2 {
+        width: calc(100% / 4);
+    }
     .flex-row.first {
+        width: 100%;
+    }
+    .flex-row2.first {
         width: 100%;
     }
     .column {
@@ -233,6 +278,13 @@ body {
         width: 100%;
     }
     .flex-row.first {
+        width: 100%;
+        border-bottom: solid 1px #d9d9d9;
+    }
+    .flex-row2 {
+        width: 100%;
+    }
+    .flex-row2.first {
         width: 100%;
         border-bottom: solid 1px #d9d9d9;
     }
@@ -5891,7 +5943,7 @@ body.has-navbar-fixed-bottom, html.has-navbar-fixed-bottom {
     color: black;
     cursor: pointer;
     display: block;
-    height: 3.25rem;
+    /*height: 3.25rem;*/
     position: relative;
     width: 3.25rem;
     margin-left: auto

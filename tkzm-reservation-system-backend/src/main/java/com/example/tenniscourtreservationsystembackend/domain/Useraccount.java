@@ -4,8 +4,7 @@ import java.io.Serializable;
 
 import javax.persistence.*;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,26 +24,30 @@ public class Useraccount implements Serializable {
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Long userId;
 
+	@JsonIgnore
 	private BigDecimal accountbalance;
 
 	private boolean enabled;
 
+	@JsonIgnore
 	private String password;
 
 	private String username;
-	
+
+	@JsonIgnore
 	private int eloblitz;
-	
+
+	@JsonIgnore
 	private int elorapid;
-	
+
+	@JsonIgnore
 	private int elobullet;
-	
+	@JsonIgnore
 	private int eloclassical;
 
 	public int getEloblitz() {
 		return eloblitz;
 	}
-
 	public void setEloblitz(int elo) {
 		this.eloblitz = elo;
 	}
@@ -74,12 +77,13 @@ public class Useraccount implements Serializable {
 	}
 
 
+	//@OneToMany(mappedBy="userAccount")
+	//@JsonManagedReference(value = "user-timeslot")
+	//private List<Timeslot> timeSlots;
 
-	//bi-directional many-to-one association to Timeslot
-	@OneToMany(mappedBy="userAccount")
-	@JsonBackReference
-	//@JsonManagedReference(value="useraccount-timeslots")
-	private List<Timeslot> timeSlots;
+	//@OneToMany(mappedBy="userAccount")
+	//@JsonManagedReference(value = "user-longtermreservation")
+	//private List<LongtermReservation> longtermReservations;
 
 	//bi-directional one-to-one association to UserRole
 	@OneToOne(mappedBy="userAccount")
@@ -129,27 +133,27 @@ public class Useraccount implements Serializable {
 		this.username = username;
 	}
 
-	public List<Timeslot> getTimeSlots() {
-		return this.timeSlots;
-	}
-
-	public void setTimeSlots(List<Timeslot> timeSlots) {
-		this.timeSlots = timeSlots;
-	}
-
-	public Timeslot addTimeSlot(Timeslot timeSlot) {
-		getTimeSlots().add(timeSlot);
-		timeSlot.setUserAccount(this);
-
-		return timeSlot;
-	}
-
-	public Timeslot removeTimeSlot(Timeslot timeSlot) {
-		getTimeSlots().remove(timeSlot);
-		timeSlot.setUserAccount(null);
-
-		return timeSlot;
-	}
+//	public List<Timeslot> getTimeSlots() {
+//		return this.timeSlots;
+//	}
+//
+//	public void setTimeSlots(List<Timeslot> timeSlots) {
+//		this.timeSlots = timeSlots;
+//	}
+//
+//	public Timeslot addTimeSlot(Timeslot timeSlot) {
+//		getTimeSlots().add(timeSlot);
+//		timeSlot.setUserAccount(this);
+//
+//		return timeSlot;
+//	}
+//
+//	public Timeslot removeTimeSlot(Timeslot timeSlot) {
+//		getTimeSlots().remove(timeSlot);
+//		timeSlot.setUserAccount(null);
+//
+//		return timeSlot;
+//	}
 
 	public UserRole getUserRole() {
 		return this.userRole;

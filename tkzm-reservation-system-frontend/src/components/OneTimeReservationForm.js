@@ -5,7 +5,7 @@ import Loader from "react-loader-spinner";
 import UserMessage from "./UserMessage";
 import {BACKEND_BASE_URL} from "../services/Constants";
 
-const ReserveTimeslotForm = ({timeslots, selectedTimeslot, onReservation, onEndTimeChange}) => {
+const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onEndTimeChange}) => {
     const [endTime, setEndTime] = useState(TimeslotService.formatDate(new Date(selectedTimeslot.endTime)))
     const [startTime, setStartTime] = useState(TimeslotService.formatDate(new Date(selectedTimeslot.startTime)))
     const [timeslotsAfterSelectedTimeslot, setTimeslotsAfterSelectedTimeslot] = useState(TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot));
@@ -60,7 +60,7 @@ const ReserveTimeslotForm = ({timeslots, selectedTimeslot, onReservation, onEndT
                 })}
                 setShowSubmitButtonLoad(false);
             }).catch(
-                error=>{setError(error);
+                error=>{setError("Pri rezervácii dvorca sa vyskytla chyba, zadajte rezerváciu znova.");
                     console.log(error)});
     }
     return (
@@ -126,6 +126,6 @@ const ReserveTimeslotForm = ({timeslots, selectedTimeslot, onReservation, onEndT
 }
 
 
-ReserveTimeslotForm.propTypes = {};
+OneTimeReservationForm.propTypes = {};
 
-export default ReserveTimeslotForm;
+export default OneTimeReservationForm;

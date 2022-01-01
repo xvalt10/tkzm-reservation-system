@@ -5,16 +5,22 @@ import java.io.Serializable;
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.OffsetDateTime;
 
 
 /**
  * The persistent class for the TimeSlot database table.86
  * 
  */
+@JsonIdentityInfo(
+		generator = ObjectIdGenerators.PropertyGenerator.class,
+		property = "slotId")
 @Entity
 @Table(name="TimeSlot")
 @NamedQuery(name="Timeslot.findAll", query="SELECT t FROM Timeslot t")
@@ -27,19 +33,37 @@ public class Timeslot implements Serializable {
 
 	private Integer courtnumber;
 
-	private Timestamp endTime;
+	private OffsetDateTime endTime;
 
 	private BigDecimal price;
 
-	private Timestamp startTime;
+	private OffsetDateTime startTime;
 
 	//bi-directional many-to-one association to Useraccount
 	@ManyToOne
-	@JoinColumn(name="userId")
-	@JsonManagedReference
+	@JoinColumn(name="user_id")
+	//@JsonBackReference(value = "user-timeslot")
 	private Useraccount userAccount;
 
+	@Column(name = "day_of_week")
+	private Integer dayOfWeek;
+
+	public Integer getDayOfWeek() {
+		return dayOfWeek;
+	}
+
+	public void setDayOfWeek(Integer dayOfWeek) {
+		this.dayOfWeek = dayOfWeek;
+	}
+
 	public Timeslot() {
+	}
+
+	public Timeslot(Integer courtnumber, OffsetDateTime startTime, OffsetDateTime endTime) {
+		this.courtnumber = courtnumber;
+		this.endTime = endTime;
+		this.startTime = startTime;
+		this.dayOfWeek = startTime.getDayOfWeek().getValue();
 	}
 
 	public  Long getSlotId() {
@@ -58,11 +82,11 @@ public class Timeslot implements Serializable {
 		this.courtnumber = courtnumber;
 	}
 
-	public Timestamp getEndTime() {
+	public OffsetDateTime getEndTime() {
 		return this.endTime;
 	}
 
-	public void setEndTime(Timestamp endTime) {
+	public void setEndTime(OffsetDateTime endTime) {
 		this.endTime = endTime;
 	}
 
@@ -74,11 +98,11 @@ public class Timeslot implements Serializable {
 		this.price = price;
 	}
 
-	public Timestamp getStartTime() {
+	public OffsetDateTime getStartTime() {
 		return this.startTime;
 	}
 
-	public void setStartTime(Timestamp startTime) {
+	public void setStartTime(OffsetDateTime startTime) {
 		this.startTime = startTime;
 	}
 

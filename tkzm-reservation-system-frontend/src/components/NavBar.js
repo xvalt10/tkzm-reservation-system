@@ -5,18 +5,22 @@ import {useEffect, useState} from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser} from '@fortawesome/free-solid-svg-icons'
 import { faSignOutAlt} from '@fortawesome/free-solid-svg-icons'
+import TimeslotService from "../services/TimeslotService";
+import {Auth} from "aws-amplify";
 const Navbar = () => {
     const navigate = useNavigate();
     const [showMenuItems,setShowMenuItems] = useState(false);
     const [account, setAccount] = useState(null);
+    const [myReservationsCount, setMyReservationsCount] = useState(0);
     const logout = () => {
-        accountService.logout();
-        navigate("/");
+         Auth.signOut().then(r => { accountService.accountSubject.next(null);  navigate('/'); });
+
     }
     const toggleMenu = () => {
         setShowMenuItems(!showMenuItems);
     }
     useEffect(() => {
+        TimeslotService.getReservationCountObservable().subscribe(count => setMyReservationsCount(count))
         accountService.account.subscribe(x => setAccount(x));
     }, []);
     return (
@@ -31,7 +35,7 @@ const Navbar = () => {
                     { account && <div id="navbar" className={`navbar-menu ${showMenuItems?'is-active':''}`}>
                         <div className="navbar-start has-text-weight-bold">
                             <NavLink to="/reservation" className="navbar-item">Rozpis</NavLink>
-                            <NavLink to="/user-reservations" className="navbar-item">Moje rezervácie</NavLink>
+                            <NavLink to="/user-reservations" className="navbar-item">Moje rezervácie({myReservationsCount})</NavLink>
                         </div>
 
                         <div className="navbar-end">
