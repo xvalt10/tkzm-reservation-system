@@ -15,14 +15,14 @@ const App = () => {
                 userPoolId: process.env.REACT_APP_USER_POOL_ID,
                 userPoolWebClientId: process.env.REACT_APP_USER_POOL_WEB_CLIENT_ID,
                 oauth: {
-                    domain: 'tkzm-rezervacie.auth.us-east-1.amazoncognito.com',
+                    domain: process.env.REACT_APP_COGNITO_DOMAIN,
                     scope: [
                         "email",
                         "openid",
                         "profile"
                     ],
-                    redirectSignIn: 'https://localhost:3000',
-                    redirectSignOut: 'https://localhost:3000',
+                    redirectSignIn: process.env.REACT_APP_API_URL,
+                    redirectSignOut: process.env.REACT_APP_API_URL,
                     responseType: "code"
                 },
             },

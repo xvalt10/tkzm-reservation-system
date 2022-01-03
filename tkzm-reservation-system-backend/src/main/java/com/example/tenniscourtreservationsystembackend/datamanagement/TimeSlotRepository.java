@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.List;
 
 import com.example.tenniscourtreservationsystembackend.domain.Timeslot;
-import com.example.tenniscourtreservationsystembackend.domain.Useraccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -22,5 +21,5 @@ public interface TimeSlotRepository extends JpaRepository<Timeslot, Long>{
 
 	List<Timeslot> findByDayOfWeekAndCourtnumber(Integer dayOfWeek, Integer courtNumber);
 
-	List<Timeslot> findByUserAccount(Useraccount userAccount);
+	List<Timeslot> findByUsername(String username);
 }

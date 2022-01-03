@@ -50,11 +50,11 @@ const LongtermReservationForm = ({timeslots, selectedTimeslot, onReservation, on
     useEffect(() => {
         setTimeslotsAfterSelectedTimeslot(!TimeslotService.isSlotReserved(selectedTimeslot) ?
             TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot) :
-            TimeslotService.getMyReservedSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot, accountService.accountValue.userId));
+            TimeslotService.getMyReservedSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot, accountService.accountValue.name));
         setLongtermReservationParams(
             {
                 'courtNumber':selectedTimeslot.courtnumber,
-                'dayOfWeek':new Date(selectedTimeslot.startTime).getUTCDay(),
+                'dayOfWeek':new Date(selectedTimeslot.startTime).getUTCDay() === 0 ? 7: new Date(selectedTimeslot.startTime).getUTCDay(),
                 'startHour': new Date(selectedTimeslot.startTime).getHours(),
                 'startMinutes': new Date(selectedTimeslot.startTime).getUTCMinutes(),
                 'endHour': new Date(selectedTimeslot.endTime).getHours(),
@@ -74,7 +74,7 @@ const LongtermReservationForm = ({timeslots, selectedTimeslot, onReservation, on
         };
         setShowSubmitButtonLoad(true);
         const backendURL = TimeslotService.isSlotReserved(selectedTimeslot) ? `${BACKEND_BASE_URL}/timeslots/longterm-reservation/cancel` :
-            `${BACKEND_BASE_URL}/timeslots/longterm-reservation/${accountService.accountValue.userId}`;
+            `${BACKEND_BASE_URL}/timeslots/longterm-reservation/${accountService.accountValue.name}`;
         fetch(backendURL, requestOptions)
             .then(response => response.json())
             .then(data => {

@@ -126,7 +126,7 @@ const TimeslotService = {
         let vacantSlotsAfterSelectedTimeslot = []
         let vacantSlotFound = false;
         for (let i = 0; i < timeslotsForSelectedDay.length; i++) {
-            if (vacantSlotFound && timeslotsForSelectedDay[i].userAccount != null) {
+            if (vacantSlotFound && timeslotsForSelectedDay[i].username != null) {
                 break;
             }
             if (timeslotsForSelectedDay[i].slotId >= selectedTimeslot.slotId) {
@@ -136,12 +136,12 @@ const TimeslotService = {
         }
         return vacantSlotsAfterSelectedTimeslot;
     },
-    getMyReservedSlotsAfterSelectedTimeslot: function (timeslots, selectedTimeslot, myUserId) {
+    getMyReservedSlotsAfterSelectedTimeslot: function (timeslots, selectedTimeslot, myUsername) {
         const timeslotsForSelectedDay = this.getTimeslotsByDateAndCourt(timeslots, new Date(selectedTimeslot.startTime), selectedTimeslot.courtnumber);
         let reservedByUserSlotsAfterSelectedTimeslot = []
         let reservedByUserSlotFound = false;
         for (let i = 0; i < timeslotsForSelectedDay.length; i++) {
-            if (reservedByUserSlotFound && (!this.isSlotReserved(timeslotsForSelectedDay[i]) || myUserId !== timeslotsForSelectedDay[i].userAccount.userId)) {
+            if (reservedByUserSlotFound && (!this.isSlotReserved(timeslotsForSelectedDay[i]) || myUsername !== timeslotsForSelectedDay[i].username)) {
                 break;
             }
             if (timeslotsForSelectedDay[i].slotId >= selectedTimeslot.slotId) {
@@ -172,14 +172,14 @@ const TimeslotService = {
     },
     formatDateLongTermReservation: function(hours,minutes, dayofweek){
         if(!isNaN(dayofweek)){
-            const daysOfWeek = ['pondelok','utorok', 'streda', 'štvrtok', 'piatok', 'sobota', 'nedeľa']
+            const daysOfWeek = ['pondelok','utorok', 'streda', 'štvrtok', 'piatok', 'sobota','nedeľa']
             dayofweek =daysOfWeek[dayofweek-1]
         }
         return `${dayofweek} ${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
     },
 
     isSlotReserved: function (timeslot) {
-        return timeslot.userAccount != null;
+        return timeslot.username != null;
     }
 
 

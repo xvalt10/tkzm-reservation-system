@@ -25,7 +25,7 @@ const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onE
     useEffect(() => {
         setTimeslotsAfterSelectedTimeslot(!TimeslotService.isSlotReserved(selectedTimeslot) ?
             TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot) :
-            TimeslotService.getMyReservedSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot, accountService.accountValue.userId));
+            TimeslotService.getMyReservedSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot, accountService.accountValue.name));
         setSlotIdsToReserve([selectedTimeslot.slotId]);
         setEndTime(TimeslotService.formatDate(new Date(selectedTimeslot.endTime)));
 
@@ -40,7 +40,7 @@ const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onE
         };
         setShowSubmitButtonLoad(true);
         const backendURL = TimeslotService.isSlotReserved(selectedTimeslot) ? `${BACKEND_BASE_URL}/timeslots/cancel` :
-            `${BACKEND_BASE_URL}/timeslots/reserve/${accountService.accountValue.userId}`;
+            `${BACKEND_BASE_URL}/timeslots/reserve/${accountService.accountValue.name}`;
         fetch(backendURL, requestOptions)
             .then(response => response.json())
             .then(data => {

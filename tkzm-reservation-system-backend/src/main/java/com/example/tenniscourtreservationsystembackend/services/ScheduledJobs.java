@@ -61,7 +61,7 @@ public class ScheduledJobs {
 		OffsetDateTime newestStoredDate = timeslotRepository.findMaxEndTime();
 
 		int daysBetween = 0;
-		OffsetDateTime slotGenerationStartDate = null;
+		OffsetDateTime slotGenerationStartDate;
 
 		if(newestStoredDate != null){
 			daysBetween = Math.round(ChronoUnit.DAYS.between(oldestStoredDate.toInstant(), newestStoredDate.toInstant()));
@@ -117,7 +117,7 @@ public class ScheduledJobs {
 			if (timeslot.getCourtnumber().equals(longtermReservation.getCourtNumber()) &&
 					timeslot.getDayOfWeek().equals(longtermReservation.getDayOfWeek()) &&
 					timeSlotService.timeslotDateTimeCoveredByLongtermReservation(longtermReservation, timeslot)) {
-				    timeslot.setUserAccount(longtermReservation.getUserAccount());
+				    timeslot.setUsername(longtermReservation.getUsername());
 			}
 		}
 	}

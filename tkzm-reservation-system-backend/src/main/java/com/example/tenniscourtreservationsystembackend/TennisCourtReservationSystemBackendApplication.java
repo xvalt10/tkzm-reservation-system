@@ -22,7 +22,7 @@ public class TennisCourtReservationSystemBackendApplication {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedMethods("GET","PUT","POST")
-                        .allowedOrigins("https://localhost:3000");
+                        .allowedOrigins("https://localhost:3000","https://tkzm-rezervacie.azurewebsites.net");
             }
         };
     }

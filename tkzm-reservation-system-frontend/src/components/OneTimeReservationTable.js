@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import TimeslotService from "../services/TimeslotService";
+import {Table, Thead, Tbody, Tr, Th, Td} from 'react-super-responsive-table';
 
 
 const OneTimeReservationTable = ({reservedTimeslots, onCancellation}) => {
@@ -13,36 +14,37 @@ const OneTimeReservationTable = ({reservedTimeslots, onCancellation}) => {
     }, [reservedTimeslots]);
 
     const cancelReservation = (event) => {
-          //  setSpinnerStatuses(Object.assign([], { ...spinnerStatuses, [index]: true }));
-            const slots = event.target.dataset? event.target.dataset.slots: event.target.parentElement.parentElement.dataset.slots;
-            if(slots){onCancellation(slots)}
+        //  setSpinnerStatuses(Object.assign([], { ...spinnerStatuses, [index]: true }));
+        const slots = event.target.dataset ? event.target.dataset.slots : event.target.parentElement.parentElement.dataset.slots;
+        if (slots) {
+            onCancellation(slots)
+        }
 
     }
 
     return (
-        <div className={'table-container'}>
-
-
-            <div className={'flex-table header'}>
-                <div className={'flex-row'}>Dvorec</div>
-                <div className={'flex-row'}>Od</div>
-                <div className={'flex-row'}>Do</div>
-                <div className={'flex-row first'}></div>
-
-            </div>
-            {Object.keys(reservedTimeslots).map((courtNumber) => {
-                return (
-                    reservedTimeslots[courtNumber].map((slotIdsArray, index) => {
-                        return (<div className={'flex-table row'}>
-                            <div className={'flex-row'}>{courtNumber}</div>
-                            <div
-                                className={'flex-row'}>{TimeslotService.formatDate(new Date(slotIdsArray[0].startTime))}</div>
-                            <div
-                                className={'flex-row'}>{TimeslotService.formatDate(new Date(slotIdsArray[slotIdsArray.length - 1].endTime))}</div>
-                            <div className={'flex-row first'}>
-                                <button id={index} className="button is-info" data-slots={slotIdsArray.map(slot => slot.slotId)}
-                                        onClick={cancelReservation}>
-                                    {/*<div style={{display: 'flex'}}>
+        <Table>
+            <Thead className="table-header">
+                <Tr >
+                    <Th>Dvorec</Th>
+                    <Th>Od</Th>
+                    <Th>Do</Th>
+                    <Th></Th>
+                </Tr>
+            </Thead>
+            <Tbody>
+                {Object.keys(reservedTimeslots).map((courtNumber) => {
+                    return (
+                        reservedTimeslots[courtNumber].map((slotIdsArray, index) => {
+                            return (<Tr key={'row' - index}>
+                                <Td key={'row' - index - '1'}>{courtNumber}</Td>
+                                <Td key={'row' - index - '2'}>{TimeslotService.formatDate(new Date(slotIdsArray[0].startTime))}</Td>
+                                <Td key={'row' - index - '3'}>{TimeslotService.formatDate(new Date(slotIdsArray[slotIdsArray.length - 1].endTime))}</Td>
+                                <Td key={'row' - index - '4'}>
+                                    <button key={'button' - index - '4'} className="button is-info"
+                                            data-slots={slotIdsArray.map(slot => slot.slotId)}
+                                            onClick={cancelReservation}>
+                                        {/*<div style={{display: 'flex'}}>
                                         {spinnerStatuses[index]!==false && <Loader
                                             type="TailSpin"
                                             color="#00BFFF"
@@ -50,15 +52,16 @@ const OneTimeReservationTable = ({reservedTimeslots, onCancellation}) => {
                                             width={'30px'}
                                         />}
                                         <div style={{marginLeft: '10px'}}>*/}
-                                            Zrušiť
+                                        Zrušiť
                                         {/*</div>
                                     </div>*/}
-                                </button>
-                            </div>
-                        </div>)
-                    }))
-            })}
-        </div>
+                                    </button>
+                                </Td>
+                            </Tr>)
+                        }))
+                })}
+            </Tbody>
+        </Table>
     )
 
 }

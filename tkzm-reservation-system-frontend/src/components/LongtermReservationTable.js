@@ -1,10 +1,11 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect} from "react";
 import TimeslotService from "../services/TimeslotService";
+import {Table, Thead, Tbody, Tr, Th, Td} from 'react-super-responsive-table';
 
 
 const LongtermReservationTable = ({longtermReservations, onCancellation}) => {
     useEffect(() => {
-console.log(longtermReservations);
+        console.log(longtermReservations);
     }, [longtermReservations]);
 
     const cancelReservation = (event) => {
@@ -17,34 +18,37 @@ console.log(longtermReservations);
     }
 
     return (
-        <div className={'table-container'}>
-            <div className={'flex-table header'}>
-                <div className={'flex-row2'}>Dvorec</div>
-                <div className={'flex-row2'}>Od</div>
-                <div className={'flex-row2'}>Do</div>
-                <div className={'flex-row2'}>Obdobie</div>
-                <div className={'flex-row2 first'}></div>
-            </div>
+        <Table>
+            <Thead>
+                <Tr>
+                    <Th>Dvorec</Th>
+                    <Th>Od</Th>
+                    <Th>Do</Th>
+                    <Th>Obdobie</Th>
+                    <Th></Th>
+                </Tr>
 
-            {longtermReservations.map((longtermReservation, index) => {
-                return (<div className={'flex-table row'}>
-                    <div className={'flex-row2'}>{longtermReservation.courtNumber}</div>
-                    <div
-                        className={'flex-row2'}>{TimeslotService.formatDateLongTermReservation(longtermReservation.startHour,longtermReservation.startMinutes, longtermReservation.dayOfWeek)}</div>
-                    <div
-                        className={'flex-row2'}>{TimeslotService.formatDateLongTermReservation(longtermReservation.endHour,longtermReservation.endMinutes, longtermReservation.dayOfWeek)}</div>
-                  <div className={'flex-row2'}>{TimeslotService.formatDateMonthDay(longtermReservation.startDate)}-{TimeslotService.formatDateMonthDay(longtermReservation.endDate)} </div>
-                    <div className={'flex-row2 first'}>
-                        <button id={index} className="button is-info" data-reservation={JSON.stringify(longtermReservation)}
-                                onClick={cancelReservation}>
-                            Zrušiť
+            </Thead>
+            <Tbody>
+                {longtermReservations.map((longtermReservation, index) => {
+                    return (<Tr>
+                        <Td key={'row' - index - '1'}>{longtermReservation.courtNumber}</Td>
+                        <Td key={'row' - index - '2'}>{TimeslotService.formatDateLongTermReservation(longtermReservation.startHour, longtermReservation.startMinutes, longtermReservation.dayOfWeek)}</Td>
+                        <Td key={'row' - index - '3'}>{TimeslotService.formatDateLongTermReservation(longtermReservation.endHour, longtermReservation.endMinutes, longtermReservation.dayOfWeek)}</Td>
+                        <Td key={'row' - index - '4'}>{TimeslotService.formatDateMonthDay(longtermReservation.startDate)}-{TimeslotService.formatDateMonthDay(longtermReservation.endDate)} </Td>
+                        <Td key={'row' - index - '5'}>
+                            <button id={index} className="button is-info"
+                                    data-reservation={JSON.stringify(longtermReservation)}
+                                    onClick={cancelReservation}>
+                                Zrušiť
 
-                        </button>
-                    </div>
-                </div>)
-            })
-            }
-        </div>
+                            </button>
+                        </Td>
+                    </Tr>)
+                })
+                }
+            </Tbody>
+        </Table>
     )
 
 }

@@ -21,7 +21,7 @@ const MyReservations = () => {
 
     function loadUserReservations() {
         const getTimetableData = async () => {
-            await fetch(`${BACKEND_BASE_URL}/timeslots/user/${accountService.accountValue.userId}`)
+            await fetch(`${BACKEND_BASE_URL}/timeslots/user/${accountService.accountValue.name}`)
                 .then(res => res.json())
                 .then(timeslotsFromServer => {
                         const groupedTimeslots = TimeslotService.groupReservedTimeslots(timeslotsFromServer);
@@ -37,7 +37,7 @@ const MyReservations = () => {
                     console.log(error)
                 });
 
-            await fetch(`${BACKEND_BASE_URL}/timeslots/longterm/user/${accountService.accountValue.userId}`)
+            await fetch(`${BACKEND_BASE_URL}/timeslots/longterm/user/${accountService.accountValue.name}`)
                 .then(res => res.json())
                 .then(longtermReservationsFromServer => {
                         if (longtermReservationsFromServer.length === 0) {

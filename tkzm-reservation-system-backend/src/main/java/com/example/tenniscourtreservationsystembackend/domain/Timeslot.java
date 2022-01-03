@@ -23,7 +23,6 @@ import java.time.OffsetDateTime;
 		property = "slotId")
 @Entity
 @Table(name="TimeSlot")
-@NamedQuery(name="Timeslot.findAll", query="SELECT t FROM Timeslot t")
 public class Timeslot implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -39,11 +38,7 @@ public class Timeslot implements Serializable {
 
 	private OffsetDateTime startTime;
 
-	//bi-directional many-to-one association to Useraccount
-	@ManyToOne
-	@JoinColumn(name="user_id")
-	//@JsonBackReference(value = "user-timeslot")
-	private Useraccount userAccount;
+	private String username;
 
 	@Column(name = "day_of_week")
 	private Integer dayOfWeek;
@@ -106,12 +101,12 @@ public class Timeslot implements Serializable {
 		this.startTime = startTime;
 	}
 
-	public Useraccount getUserAccount() {
-		return this.userAccount;
+	public String getUsername() {
+		return this.username;
 	}
 
-	public void setUserAccount(Useraccount userAccount) {
-		this.userAccount = userAccount;
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
 }

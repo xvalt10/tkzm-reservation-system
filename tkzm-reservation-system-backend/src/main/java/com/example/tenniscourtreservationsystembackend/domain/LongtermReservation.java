@@ -21,10 +21,7 @@ public class LongtermReservation {
     @Column(name = "reservation_id", nullable = false)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "userId", nullable = false)
-   // @JsonBackReference(value = "user-longtermreservation")
-    private Useraccount userAccount;
+    private String username;
 
     @Column(name = "day_of_week", nullable = false)
     private Integer dayOfWeek;
@@ -114,12 +111,12 @@ public class LongtermReservation {
         this.dayOfWeek = dayOfWeek;
     }
 
-    public Useraccount getUserAccount() {
-        return userAccount;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserAccount(Useraccount user) {
-        this.userAccount = user;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public Long getId() {

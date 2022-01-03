@@ -1,15 +1,18 @@
 import React, {useEffect, useState} from "react";
 import {Auth} from "aws-amplify";
-import Loader from "react-loader-spinner";
 import {accountService} from "../services/auth/AuthService";
 
 import UserMessage from "./UserMessage";
+import {BACKEND_BASE_URL} from "../services/Constants";
+import TimeslotService from "../services/TimeslotService";
+import ButtonWithSpinner from "./ButtonWithSpinner";
 
 const SignInForm = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [facebookButtonSpinner, setFacebookButtonSpinner] = useState(false);
     const [error, setError] = useState(null);
+    const [signInFinished, setSignInFinished] = useState(true);
 
 
     useEffect(() => {
@@ -21,13 +24,44 @@ const SignInForm = () => {
 
     }, []);
 
+    const getTimetableData = async () => {
+        await fetch(`${BACKEND_BASE_URL}/timeslots/user/${accountService.accountValue.name}`)
+            .then(res => res.json())
+            .then(timeslotsFromServer => {
+                    const groupedTimeslots = TimeslotService.groupReservedTimeslots(timeslotsFromServer);
+                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.countGroupedTimeslots(groupedTimeslots));
+                }
+            ).catch(error => {
+                setError(error.message);
+                console.log(error)
+            })
+    };
 
-    const onFacebookLoginButtonClick = () => {
+
+    const signInViaFacebook = () => {
         setFacebookButtonSpinner(true);
-        Auth.federatedSignIn({provider: 'Facebook'}).then(r => console.log(r)).catch(err => console.log(err));
+        Auth.federatedSignIn({provider: 'Facebook', user: {}})
+            .then(credentials => {
+                console.log(credentials);
+                return Auth.currentAuthenticatedUser();
+            })
+            .then(user => {
+                console.log(user);
+                    if (user) {
+                        accountService.accountSubject.next({name: user.username});
+                        getTimetableData();
+                    }
+                }
+            )
+            .catch(err => {
+                console.log(err);
+                setError(`Pri prihlásení sa vyskytla chyba.`);
+                setError(err.message);
+            });
 
     }
-    const signIn = (e) => {
+    const signInViaForm = (e) => {
+        setSignInFinished(false);
         setError(null);
         e.preventDefault();
         Auth.signIn({
@@ -35,17 +69,16 @@ const SignInForm = () => {
             password,
         })
             .then((user) => {
+                setSignInFinished(true);
                 setEmail("");
                 setPassword("");
 
-                console.log(user);
-                let account = {
-                    name: user.username,
-                }
-                accountService.accountSubject.next(account);
+                accountService.accountSubject.next({name: user.username,});
+                getTimetableData();
 
             })
             .catch((err) => {
+                setSignInFinished(true);
                 switch (err.message) {
                     case 'Incorrect username or password.':
                         setError(`Nesprávne meno alebo heslo.`);
@@ -55,7 +88,7 @@ const SignInForm = () => {
                         break;
                     default:
                         console.log(err.message);
-                        setError(`Pri prihlásení sa vyskytla chyba.`);
+                        setError(`Pri prihlásení sa vyskytla chyba.:`+err.message);
                 }
             });
     };
@@ -63,24 +96,9 @@ const SignInForm = () => {
         <div className={'box flex-column-container'}>
             <h3 className={'subtitle'}>Prihlásenie do rezervačného systému</h3>
             {error && <UserMessage message={error} color={'red'}/>}
-        {/*    <p className={'is-spaced'}>Pre prihlasénie do rezervačného sytému zadajte vašu emailovú adresu a
-                heslo alebo kliknite na tlačidlo "Prihlásenie cez Facebook"</p>*/}
-            <div style={{ 'borderBottom': '1px solid black', 'paddingBottom': '0.7rem'}}>
+            <div style={{'borderBottom': '1px solid black', 'paddingBottom': '0.7rem'}}>
                 <div className='form-control'>
-                    <button className="button is-info" onClick={() => onFacebookLoginButtonClick()}>
-                        <div style={{display: 'flex'}}>
-                            {facebookButtonSpinner && <Loader
-                                type="TailSpin"
-                                color="#00BFFF"
-                                height={'20px'}
-                                width={'20px'}
-                            />}
-                            <div style={{marginLeft: '10px'}}>
-                                Prihlásenie cez Facebook
-                            </div>
-                        </div>
-
-                    </button>
+                    <ButtonWithSpinner showSpinner={facebookButtonSpinner} onClickFunction={signInViaFacebook} text={'Prihlásiť sa cez Facebook'} />
                 </div>
             </div>
             <div className="flex-row-container">
@@ -106,9 +124,7 @@ const SignInForm = () => {
                                 placeholder="password"
                             />
                         </div>
-                        <button className="button is-rounded is-info" type="submit" onClick={signIn}>
-                            Prihlásiť sa
-                        </button>
+                        <ButtonWithSpinner showSpinner={!signInFinished} onClickFunction={signInViaForm} text={'Prihlásiť sa'} />
 
                     </form>
                 </div>

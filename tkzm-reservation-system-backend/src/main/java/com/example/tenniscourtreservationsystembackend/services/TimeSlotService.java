@@ -13,16 +13,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.example.tenniscourtreservationsystembackend.datamanagement.LongtermReservationRepository;
 import com.example.tenniscourtreservationsystembackend.datamanagement.TimeSlotRepository;
-import com.example.tenniscourtreservationsystembackend.datamanagement.UserAccountRepository;
 import com.example.tenniscourtreservationsystembackend.domain.LongtermReservation;
 import com.example.tenniscourtreservationsystembackend.domain.Timeslot;
-import com.example.tenniscourtreservationsystembackend.domain.Useraccount;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -31,13 +28,11 @@ import org.springframework.web.bind.annotation.*;
 public class TimeSlotService {
 
     private final TimeSlotRepository timeSlotRepository;
-    private final UserAccountRepository userAccountRepository;
     private final LongtermReservationRepository longtermReservationRepository;
 
     @Autowired
-    TimeSlotService(TimeSlotRepository timeSlotRepository, UserAccountRepository userAccountRepository, LongtermReservationRepository longtermReservationRepository) {
+    TimeSlotService(TimeSlotRepository timeSlotRepository, LongtermReservationRepository longtermReservationRepository) {
         this.timeSlotRepository = timeSlotRepository;
-        this.userAccountRepository = userAccountRepository;
         this.longtermReservationRepository = longtermReservationRepository;
 
     }
@@ -54,38 +49,36 @@ public class TimeSlotService {
 
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/user/{userId}")
-    private Map<Integer, List<Timeslot>> getTimeSlotsReservedByUser(@PathVariable Long userId) {
-        Useraccount userAccount = userAccountRepository.findById(userId).orElseThrow(IllegalArgumentException::new);
-        return this.timeSlotRepository.findByUserAccount(userAccount).stream().collect(Collectors.groupingBy(Timeslot::getCourtnumber));
+    @RequestMapping(method = RequestMethod.GET, value = "/user/{username}")
+    private Map<Integer, List<Timeslot>> getTimeSlotsReservedByUser(@PathVariable String username) {
+
+        return this.timeSlotRepository.findByUsername(username).stream().collect(Collectors.groupingBy(Timeslot::getCourtnumber));
 
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/longterm/user/{userId}")
-    private List<LongtermReservation> getLongtermReservationsByUser(@PathVariable Long userId) {
-        Useraccount userAccount = userAccountRepository.findById(userId).orElseThrow(IllegalArgumentException::new);
-        return this.longtermReservationRepository.findByUserAccount(userAccount).stream().collect(Collectors.toList());
+    @RequestMapping(method = RequestMethod.GET, value = "/longterm/user/{username}")
+    private List<LongtermReservation> getLongtermReservationsByUser(@PathVariable String username) {
+
+        return new ArrayList<>(this.longtermReservationRepository.findByUsername(username));
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/longterm-reservation/{userId}")
-    public List<Timeslot> makeLongtermReservation(@RequestBody String reservationParamsJson, @PathVariable Long userId,
+    @RequestMapping(method = RequestMethod.PUT, value = "/longterm-reservation/{username}")
+    public List<Timeslot> makeLongtermReservation(@RequestBody String reservationParamsJson, @PathVariable String username,
                                                   HttpServletResponse response) throws JsonProcessingException {
-
-        Useraccount userAccount = userAccountRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Rezervácia nebola úspešná lebo ID vášho používatele nie je zaevidované v systéme."));
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
 
         List<Timeslot> reservedTimeslots = new ArrayList<>();
         LongtermReservation longtermReservation = mapper.readValue(reservationParamsJson, LongtermReservation.class);
-        longtermReservation.setUserAccount(userAccount);
+        longtermReservation.setUsername(username);
 
         longtermReservationRepository.save(longtermReservation);
 
         List<Timeslot> slotsMatchedWithLongtermReservationParams = getTimeslotsByLongtermReservation(longtermReservation);
         slotsMatchedWithLongtermReservationParams.forEach(timeslot -> {
-            if (timeslot.getUserAccount() == null) {
-                timeslot.setUserAccount(userAccount);
+            if (timeslot.getUsername() == null) {
+                timeslot.setUsername(username);
                 timeslot = timeSlotRepository.save(timeslot);
                 reservedTimeslots.add(timeslot);
             }
@@ -113,11 +106,10 @@ public class TimeSlotService {
                                 timeslot.getEndTime().getMinute() <= longtermReservation.getEndMinutes()));
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/reserve/{userId}")
-    public List<Timeslot> makeOneTimeReservation(@RequestBody String slotIdsAsJsonArray, @PathVariable Long userId,
+    @RequestMapping(method = RequestMethod.PUT, value = "/reserve/{username}")
+    public List<Timeslot> makeOneTimeReservation(@RequestBody String slotIdsAsJsonArray, @PathVariable String username,
                                                  HttpServletResponse response) throws JsonProcessingException {
 
-        Useraccount userAccount = userAccountRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("Rezervácia nebola úspešná lebo ID vášho používatele nie je zaevidované v systéme."));
 
         ObjectMapper mapper = new ObjectMapper();
         List<Timeslot> reservedTimeslots = new ArrayList<>();
@@ -125,7 +117,7 @@ public class TimeSlotService {
         List<Timeslot> vacantTimeslots = new ArrayList<>();
         Arrays.asList(slotIdsToReserve).forEach((slotId) -> {
             Timeslot timeslot = timeSlotRepository.findById(slotId).orElseThrow(IllegalArgumentException::new);
-            if (timeslot.getUserAccount() == null) {
+            if (timeslot.getUsername() == null) {
                 vacantTimeslots.add(timeslot);
             } else
                 throw new IllegalArgumentException("Rezervácia nebola úspešná lebo jedno z časových okien je už rezervované iným používateľom. Vyberte prosím iný čas rezervácie.");
@@ -137,8 +129,7 @@ public class TimeSlotService {
         });
 
         vacantTimeslots.forEach((timeslot) -> {
-            userAccountRepository.save(userAccount);
-            timeslot.setUserAccount(userAccount);
+            timeslot.setUsername(username);
             timeslot = timeSlotRepository.save(timeslot);
             reservedTimeslots.add(timeslot);
         });
@@ -154,7 +145,7 @@ public class TimeSlotService {
         Long[] slotIdsToCancel = mapper.readValue(slotIdsAsJsonArray, Long[].class);
         Arrays.asList(slotIdsToCancel).forEach((slotId) -> {
             Timeslot timeslot = timeSlotRepository.findById(slotId).orElseThrow(IllegalArgumentException::new);
-            timeslot.setUserAccount(null);
+            timeslot.setUsername(null);
             timeslot = timeSlotRepository.save(timeslot);
             canceledTimeslots.add(timeslot);
         });
@@ -163,13 +154,13 @@ public class TimeSlotService {
 
     @RequestMapping(method = RequestMethod.PUT, value = "/cancel/{reservationId}")
     public List<Timeslot> cancelLongtermReservation(@PathVariable Long reservationId,
-                                                    HttpServletResponse response) throws JsonProcessingException {
+                                                    HttpServletResponse response) {
 
         LongtermReservation longtermReservation = longtermReservationRepository.findById(reservationId).orElseThrow(() -> new IllegalArgumentException("Dlhodobá rezervácia s id" + reservationId + " neexistuje."));
         List<Timeslot> canceledTimeslots = new ArrayList<>();
         List<Timeslot> slotsMatchedWithLongtermReservationParams = getTimeslotsByLongtermReservation(longtermReservation);
         slotsMatchedWithLongtermReservationParams.forEach(timeslot -> {
-                    timeslot.setUserAccount(null);
+                    timeslot.setUsername(null);
                     timeslot = timeSlotRepository.save(timeslot);
                     canceledTimeslots.add(timeslot);
                 }

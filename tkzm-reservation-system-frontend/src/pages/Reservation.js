@@ -79,7 +79,7 @@ const Reservation = ({}) => {
     const onTimeslotSelected = (timeslot) => {
         console.log(timeslot);
         console.log(accountService.accountValue);
-        if (!timeslot.userAccount || timeslot.userAccount.userId === accountService.accountValue.userId) {
+        if (!timeslot.username|| timeslot.username === accountService.accountValue.name) {
             timeslot.selected = true
             setSelectedTimeslot(timeslot)
             setTimeslotsPerDay(TimeslotService.markTimeslots(timeslotsPerDay, [timeslot.slotId]))

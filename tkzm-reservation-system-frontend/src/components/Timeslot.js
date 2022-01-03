@@ -5,7 +5,7 @@ import {accountService as userAccountService} from "../services/auth/AuthService
 const Timeslot = ({slot, onSelected}) => {
     const isSelectedClass = slot.selected ? 'selected' : '';
     const isColumnSticky = slot.column == 1 ? 'sticky-left' : '';
-    const isReservedClass = TimeslotService.isSlotReserved(slot) ? (slot.userAccount.userId === userAccountService.accountValue.userId ? 'my-reservation':'reserved') : (slot.text ? '': 'free');
+    const isReservedClass = TimeslotService.isSlotReserved(slot) ? (slot.username === userAccountService.accountValue.name ? 'my-reservation':'reserved') : (slot.text ? '': 'free');
     return (
 
         <div className={`timeslot ${isSelectedClass} ${isReservedClass} ${isColumnSticky}`} style={{
@@ -15,7 +15,7 @@ const Timeslot = ({slot, onSelected}) => {
         }} onClick={() => { onSelected &&
             onSelected(slot)
         }}>
-            <span>{slot.text}{!slot.text && slot.userAccount ? (slot.userAccount.userId === userAccountService.accountValue.userId  ? 'Moja rezervácia':`Obsadené (${slot.userAccount.username})`): !slot.text ? 'Voľné':''}</span>
+            <span>{slot.text}{!slot.text && slot.username ? (slot.username === userAccountService.accountValue.name  ? 'Moja rezervácia':`Obsadené (${slot.username})`): !slot.text ? 'Voľné':''}</span>
         </div>
     );
 }
