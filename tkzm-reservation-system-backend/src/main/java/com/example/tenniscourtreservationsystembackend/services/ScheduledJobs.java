@@ -50,7 +50,8 @@ public class ScheduledJobs {
 
 		System.out.println("Deleting all timeslots which start before:" +currentTime);
 		timeslotRepository.deleteByStartTimeBefore(currentTime);
-		
+		longtermReservationRepository.deleteByEndDateBefore(currentTime);
+
 		
 	}
 

@@ -27,6 +27,19 @@ const TimeslotService = {
         })
         return groupedTimeslots
     },
+    countReservationsByUser: function(timeslots,myusername){
+        let filteredTimeslots = {}
+
+        Object.keys(timeslots).forEach(courtNo => {
+            filteredTimeslots[courtNo] = [];
+            timeslots[courtNo].forEach(timeslot => {
+                if (timeslot.username === myusername)
+                    filteredTimeslots[courtNo].push(timeslot);
+                });
+            });
+
+        return this.countGroupedTimeslots(this.groupReservedTimeslots(filteredTimeslots));
+    },
     groupReservedTimeslots: function (timeslots) {
         let groupedTimeslots = {}
         let slotIdsForCurrentReservation = []
@@ -165,17 +178,30 @@ const TimeslotService = {
     },
     formatDateMonthDay: function (date){
         date = new Date(Date.parse(date))
-        return `${date.getDate()}.${date.getMonth() + 1}`
+        return `${date.getDate()}.${date.getMonth() + 1}.`
     },
     formatDate: function (date) {
         return `${date.getDate()}.${date.getMonth() + 1} ${date.getHours()}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`
     },
-    formatDateLongTermReservation: function(hours,minutes, dayofweek){
+    formatDateLongTermReservation: function(hoursInUTC,minutes, dayofweek){
+        const utcOffset = new Date().getTimezoneOffset();
+        const hours = hoursInUTC - 60 / utcOffset;
         if(!isNaN(dayofweek)){
             const daysOfWeek = ['pondelok','utorok', 'streda', 'štvrtok', 'piatok', 'sobota','nedeľa']
             dayofweek =daysOfWeek[dayofweek-1]
         }
         return `${dayofweek} ${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+    },
+    formatDateLongTermReservationLong: function(reservation){
+        const utcOffset = new Date().getTimezoneOffset();
+        const startHour = reservation.startHour - 60/utcOffset;
+        const endHour = reservation.endHour - 60/utcOffset;
+        let dayofweek;
+        if(!isNaN(reservation.dayOfWeek)){
+            const daysOfWeek = ['pondelok','utorok', 'streda', 'štvrtok', 'piatok', 'sobota','nedeľa']
+            dayofweek =daysOfWeek[reservation.dayOfWeek-1]
+        }
+        return `${dayofweek} ${startHour}:${reservation.startMinutes < 10 ? '0' + reservation.startMinutes : reservation.startMinutes}-${endHour}:${reservation.endMinutes < 10 ? '0' + reservation.endMinutes : reservation.endMinutes} od ${TimeslotService.formatDateMonthDay(reservation.startDate)} do ${TimeslotService.formatDateMonthDay(reservation.endDate)}`;
     },
 
     isSlotReserved: function (timeslot) {

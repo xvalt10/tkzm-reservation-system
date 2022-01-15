@@ -40,9 +40,10 @@ const Reservation = ({}) => {
                 .then(timeslotsFromServer => {
                     console.log(timeslotsFromServer)
                         slots = timeslotsFromServer;
+                        TimeslotService.getReservationCountValueSubject().next(TimeslotService.countReservationsByUser(slots,accountService.accountValue.name));
                         setTimeslots(timeslotsFromServer)
                     }
-                ).catch(error => setError(error.message))
+                ).catch(error => {console.log(error); setError(error.message)})
 
             await fetch(`${BACKEND_BASE_URL}/timeslots/uniqueDates`)
                 .then(res => res.json())
@@ -108,15 +109,15 @@ const Reservation = ({}) => {
         setSelectedTimeslot(null);
     }
 
-    const onLongtermReservation = ({courtnumber, startTime, endTime, dayOfWeek, errorMessage, operation}) => {
+    const onLongtermReservation = ({courtnumber, startTime, endTime, startDate, endDate, dayOfWeek, errorMessage, operation}) => {
         loadTimetableData();
         if (errorMessage) {
             setError(errorMessage);
         } else {
             if (operation === 'canceling') {
-                setReservationStatus(`Dlhodobá rezervácia dvorca ${courtnumber} každý ${dayOfWeek} od ${startTime} do ${endTime} bola zrušená.`);
+                setReservationStatus(`Dlhodobá rezervácia dvorca ${courtnumber} (${dayOfWeek} ${startTime}-${endTime} od ${TimeslotService.formatDateMonthDay(startDate)} do ${TimeslotService.formatDateMonthDay(endDate)}) bola zrušená.`);
             } else {
-                setReservationStatus(`Dlhodobá rezervácia dvorca ${courtnumber} každý ${dayOfWeek} od ${startTime} do ${endTime} prebehla úspešne.`);
+                setReservationStatus(`Dlhodobá rezervácia dvorca ${courtnumber} (${dayOfWeek} ${startTime}-${endTime} od ${TimeslotService.formatDateMonthDay(startDate)} do ${TimeslotService.formatDateMonthDay(endDate)}) prebehla úspešne.`);
             }
         }
 

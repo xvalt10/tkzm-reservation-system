@@ -5,13 +5,13 @@
     <parent>
         <groupId>tkzm</groupId>
         <artifactId>tkzm-reservation-system</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
 
     <groupId>com.example</groupId>
     <artifactId>tkzm-reservation-system-backend</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>reservation-system-backend</name>
+    <version>0.0.2-SNAPSHOT</version>
+    <name>tkzm-reservation-system-backend</name>
     <description>tkzm-reservation-system-backend</description>
 
     <properties>
@@ -97,7 +97,7 @@
                 <configuration>
                     <images>
                         <image>
-                            <name>xvalt10/tkzm-reservation-system:${project.version}</name>
+                            <name>xvalt10/tkzm-rezervation-system:latest</name>
                             <alias>tkzm-reservation-system-dockerimage</alias>
                             <build>
                                 <dockerFileDir>${project.basedir}</dockerFileDir>
@@ -110,6 +110,16 @@
                         </image>
                     </images>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

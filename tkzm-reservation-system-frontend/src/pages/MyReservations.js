@@ -69,6 +69,8 @@ const MyReservations = () => {
                     setShowSpinner(false);
                     const slotIdsToCancel = data.map(slot => slot.slotId);
                     const remainingtimeslots = TimeslotService.removeFromReservedTimeslots(reservedTimeslots, slotIdsToCancel);
+
+                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.countGroupedTimeslots(remainingtimeslots));
                     setReservedTimeslots(remainingtimeslots);
                     if (Object.keys(remainingtimeslots).length === 0) {
                         setOneTimeReservationsEmpty(true)
@@ -78,7 +80,7 @@ const MyReservations = () => {
                     if(remainingLongtermReservations.length === 0 ){
                         setLongtermReservationsEmpty(true);
                     }
-                    setUserMessage(`Dlhodobá rezervácia dvorca ${reservation.courtNumber} od ${TimeslotService.formatDateLongTermReservation(reservation.startHour,reservation.startMinutes, reservation.dayOfWeek)} do ${TimeslotService.formatDateLongTermReservation(reservation.endHour,reservation.endMinutes, reservation.dayOfWeek)} bola zrušená.`);
+                    setUserMessage(`Dlhodobá rezervácia dvorca ${reservation.courtNumber} ${TimeslotService.formatDateLongTermReservationLong(reservation)} bola zrušená.`);
                 }
             ).catch(error => {
             setError(error.message);
@@ -132,7 +134,7 @@ const MyReservations = () => {
                     width={'30px'}
                 />}
                 {showSpinner ? 'Prebieha rušenie rezervácie' : userMessage}</div>}
-            <h4 className={'subtitle'}>Aktuálne rezervácie</h4>
+            <h4 className={'subtitle'}>Aktuálne rezervácie (najbližších 14 dní)</h4>
             {Object.keys(reservedTimeslots).length > 0 &&
             <OneTimeReservationTable reservedTimeslots={reservedTimeslots} onCancellation={cancelOnetimeReservation}/>}
             {oneTimeReservationsEmpty && <p className={'subtitle is-6 is-spaced'}>Nemáte zadanú žiadnu jednorázovú rezerváciu.</p>}

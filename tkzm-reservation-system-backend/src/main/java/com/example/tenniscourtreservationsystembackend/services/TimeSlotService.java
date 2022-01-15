@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.DayOfWeek;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,6 +77,7 @@ public class TimeSlotService {
         longtermReservationRepository.save(longtermReservation);
 
         List<Timeslot> slotsMatchedWithLongtermReservationParams = getTimeslotsByLongtermReservation(longtermReservation);
+
         slotsMatchedWithLongtermReservationParams.forEach(timeslot -> {
             if (timeslot.getUsername() == null) {
                 timeslot.setUsername(username);
@@ -95,14 +97,18 @@ public class TimeSlotService {
     }
 
     public boolean timeslotDateTimeCoveredByLongtermReservation(LongtermReservation longtermReservation, Timeslot timeslot) {
+
+        int timeslotUTCStartHour = timeslot.getStartTime().withOffsetSameInstant(ZoneOffset.UTC).getHour();
+        int timeslotUTCEndHour = timeslot.getEndTime().withOffsetSameInstant(ZoneOffset.UTC).getHour();
+
         return
         (timeslot.getStartTime().isAfter(longtermReservation.getStartDate().withHour(0))
                 && timeslot.getEndTime().isBefore(longtermReservation.getEndDate().withHour(23))) &&
-                (timeslot.getStartTime().getHour() > longtermReservation.getStartHour() ||
-                        (timeslot.getStartTime().getHour() == longtermReservation.getStartHour() &&
+                (timeslotUTCStartHour > longtermReservation.getStartHour() ||
+                        (timeslotUTCStartHour == longtermReservation.getStartHour() &&
                                 timeslot.getStartTime().getMinute() >= longtermReservation.getStartMinutes()))
-                        && (timeslot.getEndTime().getHour() < longtermReservation.getEndHour() ||
-                        (timeslot.getEndTime().getHour() == longtermReservation.getEndHour() &&
+                        && (timeslotUTCEndHour < longtermReservation.getEndHour() ||
+                        (timeslotUTCEndHour== longtermReservation.getEndHour() &&
                                 timeslot.getEndTime().getMinute() <= longtermReservation.getEndMinutes()));
     }
 

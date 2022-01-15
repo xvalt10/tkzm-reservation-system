@@ -17,9 +17,9 @@ const LongtermReservationForm = ({timeslots, selectedTimeslot, onReservation, on
         {
             'courtNumber':selectedTimeslot.courtnumber,
             'dayOfWeek':new Date(selectedTimeslot.startTime).getUTCDay(),
-            'startHour': new Date(selectedTimeslot.startTime).getHours(),
+            'startHour': new Date(selectedTimeslot.startTime).getUTCHours(),
             'startMinutes': new Date(selectedTimeslot.startTime).getUTCMinutes(),
-            'endHour': new Date(selectedTimeslot.endTime).getHours(),
+            'endHour': new Date(selectedTimeslot.endTime).getUTCHours(),
             'endMinutes': new Date(selectedTimeslot.endTime).getUTCMinutes(),
             'startDate': startDate,
             'endDate': endDate,
@@ -32,7 +32,7 @@ const LongtermReservationForm = ({timeslots, selectedTimeslot, onReservation, on
         const endDatetime = new Date(timeslotsAfterSelectedTimeslot[event.target.selectedIndex].endTime);
         const selectedTimeslotIds = TimeslotService.getTimeslotIdsForTimeRange(timeslots, selectedTimeslot.courtnumber,
             new Date(selectedTimeslot.startTime), endDatetime);
-        setLongtermReservationParams({...longtermReservationParams, endHour:endDatetime.getHours(), endMinutes:endDatetime.getUTCMinutes()});
+        setLongtermReservationParams({...longtermReservationParams, endHour:endDatetime.getUTCHours(), endMinutes:endDatetime.getUTCMinutes()});
         setEndTime(event.target.value)
         onEndTimeChange(selectedTimeslotIds);
     }
@@ -55,9 +55,9 @@ const LongtermReservationForm = ({timeslots, selectedTimeslot, onReservation, on
             {
                 'courtNumber':selectedTimeslot.courtnumber,
                 'dayOfWeek':new Date(selectedTimeslot.startTime).getUTCDay() === 0 ? 7: new Date(selectedTimeslot.startTime).getUTCDay(),
-                'startHour': new Date(selectedTimeslot.startTime).getHours(),
+                'startHour': new Date(selectedTimeslot.startTime).getUTCHours(),
                 'startMinutes': new Date(selectedTimeslot.startTime).getUTCMinutes(),
-                'endHour': new Date(selectedTimeslot.endTime).getHours(),
+                'endHour': new Date(selectedTimeslot.endTime).getUTCHours(),
                 'endMinutes': new Date(selectedTimeslot.endTime).getUTCMinutes(),
                 'startDate': startDate,
                 'endDate': endDate,
