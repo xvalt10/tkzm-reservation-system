@@ -16,19 +16,13 @@ const Timetable = ({timeslots, onSelected}) => {
             gridTemplateRows: `repeat(${rowCount})`,
 
         }}>
-         {/*   <div className={`sticky-left`} style={{
-                gridRowStart: 1, gridRowEnd: 1,
-                gridColumnStart: 1, gridColumnEnd: 1, background:'blue'}}
-
-            >fsdfdss</div>*/}
             <Timeslot key={'topleft'} slot={{row: 1, column: 1, text: ` `}}/>
             {Object.keys(timeslots).map((courtNo, rowIndex) => {
                 return <Timeslot key={'time_row' + rowIndex+courtNo} slot={{row: rowIndex + 2, column: 1, text: `Kurt ${courtNo}`}}/>
             })}
 
 
-
-            {timeslots[Object.keys(timeslots)[0]].map((slot, columnIndex) => {
+            {timeslots[Object.keys(timeslots)[0]].sort((slot1,slot2)=>{return slot1.slotId - slot2.slotId}).map((slot, columnIndex) => {
 
                 return <Timeslot key={'courtno_column' + columnIndex} slot={{
                     row: 1,
@@ -40,8 +34,8 @@ const Timetable = ({timeslots, onSelected}) => {
             {Object.keys(timeslots).map((courtNo, rowIndex) => {
                 return (
                     <>
-                        {timeslots[courtNo].map((slot, columnIndex) => {
-                            return <Timeslot key={'t' + columnIndex+courtNo}
+                        {timeslots[courtNo].sort((slot1,slot2)=>{return slot1.slotId - slot2.slotId}).map((slot, columnIndex) => {
+                            return <Timeslot key={slot.slotId}
                                              slot={{...slot, row: rowIndex + 2, column: columnIndex + 2}} onSelected={onSelected}/>
                         })}
                     </>

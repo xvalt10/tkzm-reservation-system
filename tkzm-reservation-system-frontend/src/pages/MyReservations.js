@@ -6,11 +6,19 @@ import TimeslotService from "../services/TimeslotService";
 import Loader from "react-loader-spinner";
 import {useNavigate} from "react-router-dom";
 import UserMessage from "../components/UserMessage";
-import {BACKEND_BASE_URL} from "../services/Constants";
+import {BACKEND_BASE_URL, MODAL_CUSTOM_STYLES, RESERVATION_TYPES} from "../services/Constants";
 import LongtermReservationTable from "../components/LongtermReservationTable";
+import Modal from "react-modal";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faWindowClose} from "@fortawesome/free-solid-svg-icons";
+import OneTimeReservationForm from "../components/OneTimeReservationForm";
+import LongtermReservationForm from "../components/LongtermReservationForm";
 
 const MyReservations = () => {
     const navigate = useNavigate();
+    const [slotsToCancel, setSlotsToCancel] = useState(null);
+    const [slotIdsToCancel, setSlotIdsToCancel] = useState(null);
+    const [reservationToCancel, setReservationToCancel] = useState(null);
     const [longtermReservations, setLongtermReservations] = useState([]);
     const [reservedTimeslots, setReservedTimeslots] = useState({});
     const [userMessage, setUserMessage] = useState(null);
@@ -54,14 +62,24 @@ const MyReservations = () => {
         }
         getTimetableData();
     }
-    const cancelLongTermReservation = (reservationJSONString) => {
 
-        const reservation = JSON.parse(reservationJSONString);
+    const openCancellationModal = (reservationType,reservationData) => {
+        const reservation = JSON.parse(reservationData);
+        if (reservationType === RESERVATION_TYPES.LONGTERM) {
+            setReservationToCancel(reservation);
+        } else {
+            setSlotsToCancel(reservation);
+            setSlotIdsToCancel(reservation.map(slot=>slot.slotId));
+        }
+    }
+
+    const cancelLongTermReservation = () => {
+        setReservationToCancel(null);
         const requestOptions = {
             method: 'PUT'
         };
         setShowSpinner(true)
-        const backendURL = `${BACKEND_BASE_URL}/timeslots/cancel/${reservation.id}`;
+        const backendURL = `${BACKEND_BASE_URL}/timeslots/cancel/${reservationToCancel.id}`;
         fetch(backendURL, requestOptions)
             .then(response => response.json())
             .then(data => {
@@ -75,12 +93,14 @@ const MyReservations = () => {
                     if (Object.keys(remainingtimeslots).length === 0) {
                         setOneTimeReservationsEmpty(true)
                     }
-                    const remainingLongtermReservations = longtermReservations.filter(reservation2 => reservation2.id !== reservation.id);
+                    const remainingLongtermReservations = longtermReservations.filter(reservation2 => reservation2.id !== reservationToCancel.id);
                     setLongtermReservations(remainingLongtermReservations);
                     if(remainingLongtermReservations.length === 0 ){
                         setLongtermReservationsEmpty(true);
                     }
-                    setUserMessage(`Dlhodobá rezervácia dvorca ${reservation.courtNumber} ${TimeslotService.formatDateLongTermReservationLong(reservation)} bola zrušená.`);
+
+                    setUserMessage(`Dlhodobá rezervácia dvorca ${reservationToCancel.courtNumber} ${TimeslotService.formatDateLongTermReservationLong(reservationToCancel)} bola zrušená.`);
+
                 }
             ).catch(error => {
             setError(error.message);
@@ -88,9 +108,9 @@ const MyReservations = () => {
         })
 
     }
-    const cancelOnetimeReservation = (slots) => {
-
-        const slotIdsToCancel = slots.split(",").map(slotIdString => +slotIdString);
+    const cancelOnetimeReservation = () => {
+        setSlotsToCancel(null);
+        setSlotIdsToCancel(null);
         const requestOptions = {
             method: 'PUT',
             body: JSON.stringify(slotIdsToCancel)
@@ -136,11 +156,33 @@ const MyReservations = () => {
                 {showSpinner ? 'Prebieha rušenie rezervácie' : userMessage}</div>}
             <h4 className={'subtitle'}>Aktuálne rezervácie (najbližších 14 dní)</h4>
             {Object.keys(reservedTimeslots).length > 0 &&
-            <OneTimeReservationTable reservedTimeslots={reservedTimeslots} onCancellation={cancelOnetimeReservation}/>}
+            <OneTimeReservationTable reservedTimeslots={reservedTimeslots} onCancellation={openCancellationModal}/>}
             {oneTimeReservationsEmpty && <p className={'subtitle is-6 is-spaced'}>Nemáte zadanú žiadnu jednorázovú rezerváciu.</p>}
             <h4 className={'subtitle'}>Dlhodobé rezervácie</h4>
-            {!longtermReservationsEmpty && <LongtermReservationTable longtermReservations={longtermReservations} onCancellation={cancelLongTermReservation}/>}
+            {!longtermReservationsEmpty && <LongtermReservationTable longtermReservations={longtermReservations} onCancellation={openCancellationModal}/>}
             {longtermReservationsEmpty && <p className={'subtitle is-6 is-spaced'}>Nemáte zadanú žiadnu dlhodobú rezerváciu.</p>}
+
+            {reservationToCancel && <Modal isOpen={reservationToCancel !== null} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('main-pane')}>
+
+                <div className={'flexVerticalDivCentered'}>
+                    <FontAwesomeIcon onClick={()=>{setReservationToCancel(null);}} icon={faWindowClose} style={{margin:'5px',cursor:'pointer',alignSelf:'end'}}/>
+                    <span className={'is-spaced'}>{`Naozaj chcete zrušiť dlhodobú rezerváciu dvorca ${reservationToCancel.courtNumber} ${TimeslotService.formatDateLongTermReservationLong(reservationToCancel)}?`}</span>
+                    <button className="button is-rounded is-info" onClick={cancelLongTermReservation}>Potvrdzujem zrušenie</button>
+                </div>
+
+
+            </Modal>}
+
+            {slotIdsToCancel && <Modal isOpen={slotIdsToCancel !== null} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('main-pane')}>
+
+                <div className={'flexVerticalDivCentered'}>
+                    <FontAwesomeIcon onClick={()=>{setSlotIdsToCancel(null);}} icon={faWindowClose} style={{margin:'5px',cursor:'pointer',alignSelf:'end'}}/>
+                    <span className={'is-spaced'}>{`Naozaj chcete zrušiť rezerváciu dvorca ${slotsToCancel[0].courtnumber} od ${TimeslotService.formatDate(new Date(slotsToCancel[0].startTime))} do ${TimeslotService.formatDate(new Date(slotsToCancel[slotsToCancel.length - 1].endTime))}?`}</span>
+                    <button className="button is-rounded is-info" onClick={cancelOnetimeReservation}>Potvrdzujem zrušenie</button>
+                </div>
+
+
+            </Modal>}
         </div>
     );
 }

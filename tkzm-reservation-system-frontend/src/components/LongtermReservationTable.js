@@ -1,6 +1,7 @@
 import React, {useEffect} from "react";
 import TimeslotService from "../services/TimeslotService";
 import {Table, Thead, Tbody, Tr, Th, Td} from 'react-super-responsive-table';
+import {RESERVATION_TYPES} from "../services/Constants";
 
 
 const LongtermReservationTable = ({longtermReservations, onCancellation}) => {
@@ -12,7 +13,7 @@ const LongtermReservationTable = ({longtermReservations, onCancellation}) => {
         //  setSpinnerStatuses(Object.assign([], { ...spinnerStatuses, [index]: true }));
         const reservation = event.target.dataset ? event.target.dataset.reservation : event.target.parentElement.parentElement.dataset.reservation;
         if (reservation) {
-            onCancellation(reservation)
+            onCancellation(RESERVATION_TYPES.LONGTERM,reservation)
         }
 
     }

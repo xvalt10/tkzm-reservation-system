@@ -8,6 +8,7 @@ import TimeslotService from "../services/TimeslotService";
 import ButtonWithSpinner from "./ButtonWithSpinner";
 
 const SignInForm = () => {
+    let authenticationErrorSubscription;
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [facebookButtonSpinner, setFacebookButtonSpinner] = useState(false);
@@ -17,10 +18,14 @@ const SignInForm = () => {
 
     useEffect(() => {
         // redirect to home if already logged in
-        accountService.authenticationError.subscribe(error => {
+        authenticationErrorSubscription = accountService.authenticationError.subscribe(error => {
             setError(error);
             if (error) setFacebookButtonSpinner(false)
         })
+
+        return () => {
+            authenticationErrorSubscription.unsubscribe();
+        }
 
     }, []);
 

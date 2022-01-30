@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import TimeslotService from "../services/TimeslotService";
 import {Table, Thead, Tbody, Tr, Th, Td} from 'react-super-responsive-table';
+import {RESERVATION_TYPES} from "../services/Constants";
 
 
 const OneTimeReservationTable = ({reservedTimeslots, onCancellation}) => {
@@ -17,7 +18,7 @@ const OneTimeReservationTable = ({reservedTimeslots, onCancellation}) => {
         //  setSpinnerStatuses(Object.assign([], { ...spinnerStatuses, [index]: true }));
         const slots = event.target.dataset ? event.target.dataset.slots : event.target.parentElement.parentElement.dataset.slots;
         if (slots) {
-            onCancellation(slots)
+            onCancellation(RESERVATION_TYPES.ONETIME,slots)
         }
 
     }
@@ -42,7 +43,7 @@ const OneTimeReservationTable = ({reservedTimeslots, onCancellation}) => {
                                 <Td key={'row' - index - '3'}>{TimeslotService.formatDate(new Date(slotIdsArray[slotIdsArray.length - 1].endTime))}</Td>
                                 <Td key={'row' - index - '4'}>
                                     <button key={'button' - index - '4'} className="button is-info"
-                                            data-slots={slotIdsArray.map(slot => slot.slotId)}
+                                            data-slots={JSON.stringify(slotIdsArray)}
                                             onClick={cancelReservation}>
                                         {/*<div style={{display: 'flex'}}>
                                         {spinnerStatuses[index]!==false && <Loader

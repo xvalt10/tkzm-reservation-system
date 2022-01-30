@@ -22,4 +22,5 @@ public interface TimeSlotRepository extends JpaRepository<Timeslot, Long>{
 	List<Timeslot> findByDayOfWeekAndCourtnumber(Integer dayOfWeek, Integer courtNumber);
 
 	List<Timeslot> findByUsername(String username);
+
 }

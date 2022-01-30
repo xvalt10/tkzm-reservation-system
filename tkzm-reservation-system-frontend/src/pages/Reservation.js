@@ -1,29 +1,29 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import Timetable from "../components/Timetable";
 import OneTimeReservationForm from "../components/OneTimeReservationForm";
 import {accountService} from "../services/auth/AuthService";
 import TimeslotService from "../services/TimeslotService";
 import {useNavigate} from "react-router-dom";
 import UserMessage from "../components/UserMessage";
-import {BACKEND_BASE_URL} from "../services/Constants";
+import {BACKEND_BASE_URL, MODAL_CUSTOM_STYLES, RESERVATION_TYPES} from "../services/Constants";
 import Loader from "react-loader-spinner";
+import Modal from 'react-modal';
 import LongtermReservationForm from "../components/LongtermReservationForm";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faWindowClose} from "@fortawesome/free-solid-svg-icons";
 
 const Reservation = ({}) => {
     const navigate = useNavigate();
-    const reservationTypes = {
-        'LONGTERM':'longterm',
-        'ONETIME':'onetime'
-    }
+    const selectedDateSelectBox = useRef(null);
+    let loadDataIntervalId = null;
     const [timeslots, setTimeslots] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(null);
     const [timeslotsPerDay, setTimeslotsPerDay] = useState({});
     const [reservationStatus, setReservationStatus] = useState(null);
     const [selectedTimeslot, setSelectedTimeslot] = useState(null);
-    const [selectedDate, setSelectedDate] = useState(null);
     const [datesForReservation, setDatesForReservation] = useState([]);
     const [error, setError] = useState(null);
-    const [reservationType, setReservationType] = useState(reservationTypes.ONETIME);
-
+    const [reservationType, setReservationType] = useState(RESERVATION_TYPES.ONETIME);
 
     function displayTimeslotsForSelectedDay(timeslots, date) {
         const datetokens = date.split(" ")[0].split(".")
@@ -43,7 +43,7 @@ const Reservation = ({}) => {
                         TimeslotService.getReservationCountValueSubject().next(TimeslotService.countReservationsByUser(slots,accountService.accountValue.name));
                         setTimeslots(timeslotsFromServer)
                     }
-                ).catch(error => {console.log(error); setError(error.message)})
+                ).catch(error => {console.log(error); setError("Načítanie dát nebolo úspešne. Skúste stránku znova načítať.")})
 
             await fetch(`${BACKEND_BASE_URL}/timeslots/uniqueDates`)
                 .then(res => res.json())
@@ -52,20 +52,29 @@ const Reservation = ({}) => {
                             setError("Načítanie dát nebolo úspešné.")
                         } else {
                             setDatesForReservation(dates)
-                            displayTimeslotsForSelectedDay(slots, selectedDate || dates[0]);
+                            setSelectedDate(prevSelectedDate => prevSelectedDate == null ? dates[0]:prevSelectedDate);
+                            displayTimeslotsForSelectedDay(slots, dates[selectedDateSelectBox.current.selectedIndex]);
                         }
                     }
-                ).catch(error => setError(error.message))
+                ).catch(error => {console.log(error);setError("Načítanie dát nebolo úspešne. Skúste stránku znova načítať.")})
 
         }
-        getTimetableData()
+        getTimetableData();
+
     }
+
+
 
     useEffect(() => {
         if (!accountService.accountValue) {
             navigate('/');
         } else {
             loadTimetableData();
+            if(!loadDataIntervalId){
+            loadDataIntervalId = setInterval(loadTimetableData,60000);}
+        }
+        return () => {
+            clearInterval(loadDataIntervalId);
         }
     }, [])
 
@@ -85,6 +94,10 @@ const Reservation = ({}) => {
             setSelectedTimeslot(timeslot)
             setTimeslotsPerDay(TimeslotService.markTimeslots(timeslotsPerDay, [timeslot.slotId]))
         }
+    }
+
+    const closeModal = () => {
+        setSelectedTimeslot(null);
     }
 
     const onEndTimeChange = (slotIdsToMark) => {
@@ -139,28 +152,35 @@ const Reservation = ({}) => {
             {timeslots && <div className='form-control'>
                 <label>Dátum rezervácie</label>
 
-                <select onChange={(e) => onReservationDateChanged(e)}>
+                <select ref={selectedDateSelectBox} onChange={(e) => onReservationDateChanged(e)}>
                     <>
-                        {datesForReservation.map((uniqueDate) => {
-                            return <option>{uniqueDate}</option>
+                        {datesForReservation.map((uniqueDate,index) => {
+                            return <option key={index}>{uniqueDate}</option>
                         })}</>
                 </select>
             </div>}
 
             {reservationStatus && <h4 className={'user-message'}>{reservationStatus}</h4>}
             {timeslots && <Timetable timeslots={timeslotsPerDay} onSelected={onTimeslotSelected}/>}
-            {selectedTimeslot && <div className="containerTimeslotForm"><div className="form-control-check" onChange={(e) => onReservationTypeChanged(e)}>
-                <label>Typ rezervácie</label>
-                <input type="radio" value={reservationTypes.ONETIME} name="reservation-type" checked={reservationType === reservationTypes.ONETIME}/> Jednorázová
-                <input type="radio" value={reservationTypes.LONGTERM} name="reservation-type" checked={reservationType === reservationTypes.LONGTERM}/> Dlhodobá
-            </div></div>}
-
-            {selectedTimeslot && reservationType===reservationTypes.ONETIME && <OneTimeReservationForm timeslots={timeslotsPerDay} selectedTimeslot={selectedTimeslot}
-                                                         onReservation={onReservation} onEndTimeChange={onEndTimeChange}/>}
 
 
-            {selectedTimeslot && reservationType===reservationTypes.LONGTERM && <LongtermReservationForm timeslots={timeslotsPerDay} selectedTimeslot={selectedTimeslot}
-                                                                                                       onReservation={onLongtermReservation} onEndTimeChange={onEndTimeChange}/>}
+
+            <Modal isOpen={selectedTimeslot!==null} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('main-pane')}>
+                <FontAwesomeIcon onClick={()=>{setSelectedTimeslot(null);}} icon={faWindowClose} style={{marginRight:'5px',cursor:'pointer'}}/>
+                {selectedTimeslot && !TimeslotService.isSlotReserved(selectedTimeslot) && <div className="containerTimeslotForm"><div className="form-control-check" onChange={(e) => onReservationTypeChanged(e)}>
+                    <label>Typ rezervácie</label>
+                    <input type="radio" value={RESERVATION_TYPES.ONETIME} name="reservation-type" checked={reservationType === RESERVATION_TYPES.ONETIME}/> Jednorázová
+                    <input type="radio" value={RESERVATION_TYPES.LONGTERM} name="reservation-type" checked={reservationType === RESERVATION_TYPES.LONGTERM}/> Dlhodobá
+                </div></div>}
+                {selectedTimeslot && reservationType===RESERVATION_TYPES.ONETIME && <OneTimeReservationForm timeslots={timeslotsPerDay} selectedTimeslot={selectedTimeslot}
+                                        onReservation={onReservation} onEndTimeChange={onEndTimeChange} />}
+                {selectedTimeslot && !TimeslotService.isSlotReserved(selectedTimeslot) && reservationType===RESERVATION_TYPES.LONGTERM && <LongtermReservationForm timeslots={timeslotsPerDay} selectedTimeslot={selectedTimeslot}
+                                                                                                             onReservation={onLongtermReservation} onEndTimeChange={onEndTimeChange}/>}
+            </Modal>
+
+
+
+
         </div>
     );
 }

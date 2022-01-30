@@ -6,6 +6,11 @@ import {accountService} from '../services/auth/AuthService';
 import {useNavigate} from "react-router-dom";
 import SignInForm from "./SignInForm";
 import SignUpForm from "./SignUpForm";
+import {isMobile} from 'react-device-detect';
+import Modal from 'react-modal';
+import {MODAL_CUSTOM_STYLES} from "../services/Constants";
+import {faWindowClose} from "@fortawesome/free-solid-svg-icons";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
 const Login = () => {
     let navigate = useNavigate();
@@ -71,8 +76,14 @@ const Login = () => {
 
             </div>
 
-            {showSignInForm && <SignInForm/>}
-            {showSignUpForm && <SignUpForm/>}
+            {isMobile && <Modal isOpen={showSignInForm || showSignUpForm} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('root')}>
+                <FontAwesomeIcon onClick={()=>{setShowSignUpForm(false);setShowSignInForm(false)}} icon={faWindowClose} style={{marginRight:'5px',cursor:'pointer'}}/>
+                {showSignInForm && <SignInForm/>}
+                {showSignUpForm && <SignUpForm/>}
+            </Modal>}
+
+            {!isMobile && showSignInForm && <SignInForm/>}
+            {!isMobile && showSignUpForm && <SignUpForm/>}
         </>
     );
 }

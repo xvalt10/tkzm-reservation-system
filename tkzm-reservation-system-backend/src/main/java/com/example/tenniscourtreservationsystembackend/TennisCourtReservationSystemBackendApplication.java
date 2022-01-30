@@ -30,7 +30,7 @@ public class TennisCourtReservationSystemBackendApplication {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedMethods("GET", "PUT", "POST")
-                        .allowedOrigins("https://localhost:3000", "https://tkzm-rezervacie.azurewebsites.net", "https://tkzm-rezervacie.wittyisland-57a63db4.northeurope.azurecontainerapps.io");
+                        .allowedOrigins("https://localhost:3000", "https://tkzm-rezervacie.azurewebsites.net", "https://tkzm-rezervacie.wittyisland-57a63db4.northeurope.azurecontainerapps.io", "https://tkzm-rezervacie.herokuapp.com");
             }
         };
     }

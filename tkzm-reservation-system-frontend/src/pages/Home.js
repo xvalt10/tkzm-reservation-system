@@ -9,7 +9,10 @@ import TimeslotService from "../services/TimeslotService";
 
 
 const Home = () => {
+    let authenticationErrorSubscription;
+    let accountSubscription;
     let navigate = useNavigate();
+    const [authenticationFinished, setAuthenticationFinished] = useState(false);
     const [account, setAccount] = useState(null);
     const [error, setError] = useState(null);
     const forwardToReservation = () => {
@@ -30,33 +33,40 @@ const Home = () => {
     };
 
     useEffect(() => {
-        accountService.authenticationError.subscribe(error => setError(error == null ? error : error.message))
-        accountService.account.subscribe(x => setAccount(x));
-        Auth.currentAuthenticatedUser()
+        authenticationErrorSubscription =accountService.authenticationError.subscribe(error => setError(error == null ? error : error.message))
+        accountSubscription=accountService.account.subscribe(x => setAccount(x));
+        const checkIfUserAuthenticated = Auth.currentAuthenticatedUser()
             .then(account => {
-                console.log(account);
-                setAccount({name: account.username});
-                accountService.accountSubject.next({name: account.username});
-                getTimetableData()
+                Auth.currentUserInfo().then(userInfo => {
+                    let username = userInfo.attributes.name ? userInfo.attributes.name : userInfo.username;
+                    setAccount({name: username});
+                    accountService.accountSubject.next({name: username});
+                    getTimetableData()
+                })
             })
             .catch((error) => {
                 setAccount(null);
                 console.log('Not signed in')
             });
+        checkIfUserAuthenticated.then(data => {console.log("Auth check finished");setAuthenticationFinished(true)});
+        return ()=>{
+            authenticationErrorSubscription.unsubscribe();
+            accountSubscription.unsubscribe();
+        }
     }, []);
 
     return (
         <div>
             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-                {account && <h3 className="title">Úvodná stránka</h3>}
+                {authenticationFinished && account && <h3 className="title">Úvodná stránka</h3>}
                 {error &&
                 <UserMessage color={'indianred'} message={`Chyba pri autentifikácii, skúste sa prihlásiť znova.`}/>}
-                {account &&
+                {authenticationFinished && account &&
                 <p style={{marginBottom: '10px'}}>Užívatel {account.name} bol úspešne prihlásený do rezervačného systému
                     TK
                     ZLATE MORAVCE. Môžete prístúpiť k rezervácií dvorcov.</p>
                 }
-                {account ?
+                {authenticationFinished && account ?
                     <button className={'button is-info'} onClick={forwardToReservation}>Rezervuj si dvorec</button> :
                     <Login/>
                 }

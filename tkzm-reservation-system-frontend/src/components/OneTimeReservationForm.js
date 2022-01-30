@@ -31,6 +31,11 @@ const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onE
 
     }, [selectedTimeslot]);
 
+    const onModalClose=(e)=>{
+        e.preventDefault();
+        selectedTimeslot = null;
+    }
+
 
     const onSubmit = (e) => {
         e.preventDefault()

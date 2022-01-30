@@ -72,15 +72,17 @@ body {
 }
 
 .reserve-court-form {
-    margin-bottom: 40px;
+    margin-bottom: 5px;
 }
 
 .form-control {
-    margin: 20px 0;
+    margin: 10px 0;
+    width: 100%;
 }
 
 .form-control label {
     display: block;
+    margin-bottom:1px;
 }
 
 .form-control input {
@@ -130,6 +132,13 @@ body {
     display: flex;
     justify-content: center;
 
+}
+
+.flexVerticalDivCentered {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items:center
 }
 
 .btn:focus {
@@ -5371,7 +5380,7 @@ a.dropdown-item.is-active, button.dropdown-item.is-active {
     background-color: #fff;
     min-height: 3.25rem;
     position: relative;
-    z-index: 30
+    /*z-index: 30*/
 }
 
 .navbar.is-white {

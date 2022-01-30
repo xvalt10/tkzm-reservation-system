@@ -39,21 +39,21 @@ public class TimeSlotService {
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    private List<Timeslot> getTimeSlots() {
-        return this.timeSlotRepository.findAll();
+    private List<Timeslot> getTimeSlotsSortedById() {
+        return this.timeSlotRepository.findAll().stream().sorted(Comparator.comparingLong(Timeslot::getSlotId)).collect(Collectors.toList());
 
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/byCourt")
     private Map<Integer, List<Timeslot>> getTimeSlotsByCourts() {
-        return this.timeSlotRepository.findAll().stream().collect(Collectors.groupingBy(Timeslot::getCourtnumber));
+        return getTimeSlotsSortedById().stream().collect(Collectors.groupingBy(Timeslot::getCourtnumber));
 
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/user/{username}")
     private Map<Integer, List<Timeslot>> getTimeSlotsReservedByUser(@PathVariable String username) {
 
-        return this.timeSlotRepository.findByUsername(username).stream().collect(Collectors.groupingBy(Timeslot::getCourtnumber));
+        return this.timeSlotRepository.findByUsername(username).stream().sorted(Comparator.comparingLong(Timeslot::getSlotId)).collect(Collectors.groupingBy(Timeslot::getCourtnumber));
 
     }
 
@@ -127,10 +127,6 @@ public class TimeSlotService {
                 vacantTimeslots.add(timeslot);
             } else
                 throw new IllegalArgumentException("Rezervácia nebola úspešná lebo jedno z časových okien je už rezervované iným používateľom. Vyberte prosím iný čas rezervácie.");
-//        userAccount.setAccountbalance(userAccount.getAccountbalance().subtract(timeslot.getPrice()));
-//        if (userAccount.getAccountbalance().compareTo(new BigDecimal(0)) < 0) {
-//            throw new InsufficientFundsException();
-//        }
 
         });
 
@@ -139,7 +135,11 @@ public class TimeSlotService {
             timeslot = timeSlotRepository.save(timeslot);
             reservedTimeslots.add(timeslot);
         });
-        return reservedTimeslots;
+        if (reservedTimeslots.isEmpty()) {
+            throw new IllegalArgumentException("Rezerváciu dvorca v danom čase nie je možné uskutočniť.");
+        } else {
+            return reservedTimeslots;
+        }
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "/cancel")
@@ -182,7 +182,8 @@ public class TimeSlotService {
         List<String> uniqueDates = new ArrayList<>();
         Calendar calendar = Calendar.getInstance();
         String dateString;
-        List<Timeslot> timeslots = timeSlotRepository.findAll();
+        List<Timeslot> timeslots = timeSlotRepository.findAll().stream().sorted(Comparator.comparingLong(Timeslot::getSlotId)).collect(Collectors.toList());
+
         for (Timeslot timeslot : timeslots) {
             OffsetDateTime timestamp = timeslot.getStartTime();
             DayOfWeek dayOfWeek = timestamp.getDayOfWeek();
@@ -190,7 +191,7 @@ public class TimeSlotService {
             int mMonth = timestamp.getMonthValue();
             int mDay = timestamp.getDayOfMonth();
             String dayOfWeekString = dayOfWeek.getDisplayName(TextStyle.FULL, new Locale("sk", "SK"));
-            dateString = String.valueOf(mDay).concat(".").concat(String.valueOf(mMonth).concat(" (" + dayOfWeekString + ")"));
+            dateString = String.format("%02d",mDay).concat(".").concat(String.format("%02d",mMonth)).concat(" (" + dayOfWeekString + ")");
             if (!uniqueDates.contains(dateString)) {
                 uniqueDates.add(dateString);
             }
