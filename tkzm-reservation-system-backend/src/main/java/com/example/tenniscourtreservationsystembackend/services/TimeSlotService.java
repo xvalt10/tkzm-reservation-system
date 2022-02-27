@@ -1,12 +1,8 @@
 package com.example.tenniscourtreservationsystembackend.services;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Timestamp;
-import java.time.DayOfWeek;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.format.TextStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,10 +13,10 @@ import com.example.tenniscourtreservationsystembackend.datamanagement.TimeSlotRe
 import com.example.tenniscourtreservationsystembackend.domain.LongtermReservation;
 import com.example.tenniscourtreservationsystembackend.domain.Timeslot;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -30,63 +26,41 @@ public class TimeSlotService {
 
     private final TimeSlotRepository timeSlotRepository;
     private final LongtermReservationRepository longtermReservationRepository;
+    private ObjectMapper mapper;
 
     @Autowired
     TimeSlotService(TimeSlotRepository timeSlotRepository, LongtermReservationRepository longtermReservationRepository) {
         this.timeSlotRepository = timeSlotRepository;
         this.longtermReservationRepository = longtermReservationRepository;
+        this.mapper = new ObjectMapper();
+        this.mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.mapper.registerModule(new JavaTimeModule());
 
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    private List<Timeslot> getTimeSlotsSortedById() {
-        return this.timeSlotRepository.findAll().stream().sorted(Comparator.comparingLong(Timeslot::getSlotId)).collect(Collectors.toList());
+    private List<Timeslot> getCurrentTimeslotsSortedById() {
+        return this.timeSlotRepository.findByStartTimeAfter(OffsetDateTime.now().truncatedTo(ChronoUnit.DAYS)).stream().sorted(Comparator.comparingLong(Timeslot::getSlotId)).collect(Collectors.toList());
 
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/byCourt")
     private Map<Integer, List<Timeslot>> getTimeSlotsByCourts() {
-        return getTimeSlotsSortedById().stream().collect(Collectors.groupingBy(Timeslot::getCourtnumber));
+        return getCurrentTimeslotsSortedById().stream().collect(Collectors.groupingBy(Timeslot::getCourtnumber));
 
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/user/{username}")
     private Map<Integer, List<Timeslot>> getTimeSlotsReservedByUser(@PathVariable String username) {
 
-        return this.timeSlotRepository.findByUsername(username).stream().sorted(Comparator.comparingLong(Timeslot::getSlotId)).collect(Collectors.groupingBy(Timeslot::getCourtnumber));
+        return this.timeSlotRepository.findByUsernameAndStartTimeAfterOrderBySlotId(username, OffsetDateTime.now().truncatedTo(ChronoUnit.DAYS)).stream().collect(Collectors.groupingBy(Timeslot::getCourtnumber));
 
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/longterm/user/{username}")
     private List<LongtermReservation> getLongtermReservationsByUser(@PathVariable String username) {
 
-        return new ArrayList<>(this.longtermReservationRepository.findByUsername(username));
-    }
-
-    @RequestMapping(method = RequestMethod.PUT, value = "/longterm-reservation/{username}")
-    public List<Timeslot> makeLongtermReservation(@RequestBody String reservationParamsJson, @PathVariable String username,
-                                                  HttpServletResponse response) throws JsonProcessingException {
-
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-
-        List<Timeslot> reservedTimeslots = new ArrayList<>();
-        LongtermReservation longtermReservation = mapper.readValue(reservationParamsJson, LongtermReservation.class);
-        longtermReservation.setUsername(username);
-
-        longtermReservationRepository.save(longtermReservation);
-
-        List<Timeslot> slotsMatchedWithLongtermReservationParams = getTimeslotsByLongtermReservation(longtermReservation);
-
-        slotsMatchedWithLongtermReservationParams.forEach(timeslot -> {
-            if (timeslot.getUsername() == null) {
-                timeslot.setUsername(username);
-                timeslot = timeSlotRepository.save(timeslot);
-                reservedTimeslots.add(timeslot);
-            }
-        });
-
-        return reservedTimeslots;
+        return new ArrayList<>(this.longtermReservationRepository.findByUsernameAndStartDateAfter(username, OffsetDateTime.now().truncatedTo(ChronoUnit.DAYS)));
     }
 
     public List<Timeslot> getTimeslotsByLongtermReservation(LongtermReservation longtermReservation) {
@@ -113,101 +87,97 @@ public class TimeSlotService {
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "/reserve/{username}")
-    public List<Timeslot> makeOneTimeReservation(@RequestBody String slotIdsAsJsonArray, @PathVariable String username,
+    public Timeslot makeOneTimeReservation(@RequestBody String slotToReserveAsJson, @PathVariable String username,
                                                  HttpServletResponse response) throws JsonProcessingException {
 
+        Timeslot slotToReserve = mapper.readValue(slotToReserveAsJson, Timeslot.class);
+        slotToReserve.setStartTime(slotToReserve.getStartTime().truncatedTo(ChronoUnit.MINUTES));
+        slotToReserve.setEndTime(slotToReserve.getEndTime().truncatedTo(ChronoUnit.MINUTES));
+        slotToReserve.setUsername(username);
 
-        ObjectMapper mapper = new ObjectMapper();
-        List<Timeslot> reservedTimeslots = new ArrayList<>();
-        Long[] slotIdsToReserve = mapper.readValue(slotIdsAsJsonArray, Long[].class);
-        List<Timeslot> vacantTimeslots = new ArrayList<>();
-        Arrays.asList(slotIdsToReserve).forEach((slotId) -> {
-            Timeslot timeslot = timeSlotRepository.findById(slotId).orElseThrow(IllegalArgumentException::new);
-            if (timeslot.getUsername() == null) {
-                vacantTimeslots.add(timeslot);
-            } else
-                throw new IllegalArgumentException("Rezervácia nebola úspešná lebo jedno z časových okien je už rezervované iným používateľom. Vyberte prosím iný čas rezervácie.");
 
-        });
-
-        vacantTimeslots.forEach((timeslot) -> {
-            timeslot.setUsername(username);
-            timeslot = timeSlotRepository.save(timeslot);
-            reservedTimeslots.add(timeslot);
-        });
-        if (reservedTimeslots.isEmpty()) {
-            throw new IllegalArgumentException("Rezerváciu dvorca v danom čase nie je možné uskutočniť.");
+        List<Timeslot> collidingReservations = timeSlotRepository.findByCourtnumberAndStartTimeBetween(slotToReserve.getCourtnumber(), slotToReserve.getStartTime(), slotToReserve.getEndTime().minusMinutes(1));
+        if (!collidingReservations.isEmpty()) {
+            throw new IllegalArgumentException("Rezervácia nebola úspešná lebo jedno z časových okien je už rezervované iným používateľom. Vyberte prosím iný čas rezervácie.");
         } else {
-            return reservedTimeslots;
+            List<Timeslot> userReservations = timeSlotRepository.findByUsername(username);
+            Timeslot slotDirectlyBeforeCurrent = null;
+            Timeslot slotDirectlyAfterCurrent = null;
+            for(Timeslot existingReservation: userReservations){
+                if(existingReservation.getCourtnumber().equals(slotToReserve.getCourtnumber()) && existingReservation.getEndTime().isEqual(slotToReserve.getStartTime())){
+                    slotDirectlyBeforeCurrent = existingReservation;
+                }
+                if(existingReservation.getCourtnumber().equals(slotToReserve.getCourtnumber()) && existingReservation.getStartTime().isEqual(slotToReserve.getEndTime())){
+                    slotDirectlyAfterCurrent = existingReservation;
+                }
+                if(slotDirectlyBeforeCurrent != null & slotDirectlyAfterCurrent != null) break;
+            }
+            if(slotDirectlyBeforeCurrent == null && slotDirectlyAfterCurrent == null){
+                timeSlotRepository.save(slotToReserve);
+            } else if(slotDirectlyBeforeCurrent != null && slotDirectlyAfterCurrent == null){
+                slotDirectlyBeforeCurrent.setEndTime(slotToReserve.getEndTime());
+                timeSlotRepository.save(slotDirectlyBeforeCurrent);
+            } else if(slotDirectlyBeforeCurrent == null && slotDirectlyAfterCurrent != null){
+                slotDirectlyAfterCurrent.setStartTime(slotToReserve.getStartTime());
+                timeSlotRepository.save(slotDirectlyAfterCurrent);
+            } else {
+                slotDirectlyBeforeCurrent.setEndTime(slotDirectlyAfterCurrent.getEndTime());
+                timeSlotRepository.save(slotDirectlyBeforeCurrent);
+                timeSlotRepository.delete(slotDirectlyAfterCurrent);
+            }
+            return slotToReserve;
         }
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/cancel")
-    public List<Timeslot> cancelOneTimeReservation(@RequestBody String slotIdsAsJsonArray,
+    @RequestMapping(method = RequestMethod.PUT, value = "/cancel/onetime/{reservationId}")
+    public Timeslot cancelOneTimeReservation(@PathVariable Long reservationId,
                                                    HttpServletResponse response) throws JsonProcessingException {
 
-        ObjectMapper mapper = new ObjectMapper();
-        List<Timeslot> canceledTimeslots = new ArrayList<>();
-        Long[] slotIdsToCancel = mapper.readValue(slotIdsAsJsonArray, Long[].class);
-        Arrays.asList(slotIdsToCancel).forEach((slotId) -> {
-            Timeslot timeslot = timeSlotRepository.findById(slotId).orElseThrow(IllegalArgumentException::new);
-            timeslot.setUsername(null);
-            timeslot = timeSlotRepository.save(timeslot);
-            canceledTimeslots.add(timeslot);
-        });
-        return canceledTimeslots;
+        Timeslot timeslot = timeSlotRepository.findById(reservationId).orElseThrow(()-> new IllegalArgumentException("Uvedená rezervácia už bola zrušená."));
+        timeSlotRepository.delete(timeslot);
+        return timeslot;
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/cancel/{reservationId}")
+    @RequestMapping(method = RequestMethod.PUT, value = "/longterm-reservation/{username}")
+    public List<Timeslot> makeLongtermReservation(@RequestBody String reservationParamsJson, @PathVariable String username,
+                                                  HttpServletResponse response) throws JsonProcessingException {
+
+        List<Timeslot> reservedTimeslots = new ArrayList<>();
+        LongtermReservation longtermReservation = mapper.readValue(reservationParamsJson, LongtermReservation.class);
+        longtermReservation.setStartDate(longtermReservation.getStartDate().truncatedTo(ChronoUnit.MINUTES));
+        longtermReservation.setEndDate(longtermReservation.getEndDate().truncatedTo(ChronoUnit.MINUTES));
+        longtermReservation.setUsername(username);
+
+        longtermReservationRepository.save(longtermReservation);
+
+        OffsetDateTime reservationStartDate= longtermReservation.getStartDate();
+        OffsetDateTime reservationEndDate= longtermReservation.getEndDate();
+
+        while (!reservationStartDate.isAfter(reservationEndDate)) {
+            Timeslot timeslot = new Timeslot();
+            timeslot.setUsername(username);
+            timeslot.setDayOfWeek(reservationStartDate.getDayOfWeek().getValue());
+            timeslot.setStartTime(reservationStartDate.withHour(longtermReservation.getStartHour()).withMinute(longtermReservation.getStartMinutes()));
+            timeslot.setEndTime(reservationStartDate.withHour(longtermReservation.getEndHour()).withMinute(longtermReservation.getEndMinutes()));
+            timeslot.setCourtnumber(longtermReservation.getCourtNumber());
+            reservedTimeslots.add(timeslot);
+            reservationStartDate = reservationStartDate.plusDays(7);
+        }
+
+        timeSlotRepository.saveAll(reservedTimeslots);
+
+        return reservedTimeslots;
+    }
+
+    @RequestMapping(method = RequestMethod.PUT, value = "/cancel/longterm/{reservationId}")
     public List<Timeslot> cancelLongtermReservation(@PathVariable Long reservationId,
                                                     HttpServletResponse response) {
 
         LongtermReservation longtermReservation = longtermReservationRepository.findById(reservationId).orElseThrow(() -> new IllegalArgumentException("Dlhodobá rezervácia s id" + reservationId + " neexistuje."));
-        List<Timeslot> canceledTimeslots = new ArrayList<>();
-        List<Timeslot> slotsMatchedWithLongtermReservationParams = getTimeslotsByLongtermReservation(longtermReservation);
-        slotsMatchedWithLongtermReservationParams.forEach(timeslot -> {
-                    timeslot.setUsername(null);
-                    timeslot = timeSlotRepository.save(timeslot);
-                    canceledTimeslots.add(timeslot);
-                }
-        );
-
+        List<Timeslot> canceledTimeslots = getTimeslotsByLongtermReservation(longtermReservation);
+        timeSlotRepository.deleteAll(canceledTimeslots);
         longtermReservationRepository.delete(longtermReservation);
         return canceledTimeslots;
-    }
-
-
-    @RequestMapping(method = RequestMethod.GET, value = "uniqueDates")
-    private List<String> getUniqueDates() {
-        List<String> uniqueDates = new ArrayList<>();
-        Calendar calendar = Calendar.getInstance();
-        String dateString;
-        List<Timeslot> timeslots = timeSlotRepository.findAll().stream().sorted(Comparator.comparingLong(Timeslot::getSlotId)).collect(Collectors.toList());
-
-        for (Timeslot timeslot : timeslots) {
-            OffsetDateTime timestamp = timeslot.getStartTime();
-            DayOfWeek dayOfWeek = timestamp.getDayOfWeek();
-
-            int mMonth = timestamp.getMonthValue();
-            int mDay = timestamp.getDayOfMonth();
-            String dayOfWeekString = dayOfWeek.getDisplayName(TextStyle.FULL, new Locale("sk", "SK"));
-            dateString = String.format("%02d",mDay).concat(".").concat(String.format("%02d",mMonth)).concat(" (" + dayOfWeekString + ")");
-            if (!uniqueDates.contains(dateString)) {
-                uniqueDates.add(dateString);
-            }
-
-        }
-        return uniqueDates;
-
-    }
-
-    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
-    class InsufficientFundsException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
-
-        public InsufficientFundsException() {
-            super("The sum to be paid exceeds your account balance.");
-        }
     }
 
 }

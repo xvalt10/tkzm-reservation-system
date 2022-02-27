@@ -41,75 +41,15 @@ public class ScheduledJobs {
 		this.timeSlotService = timeSlotService;
 	}
 
-	@Scheduled(cron="0 0/1 * * * *")
-	public void deleteOldTimeSlots(){
+	@Scheduled(cron="0 0 * * * *")
+	public void deleteReservationsOlderThanOneMonth(){
 
-		addNewTimeSlotsIfNecessary();
+		OffsetDateTime oneMonthAgo = OffsetDateTime.now().minusMonths(1);
 
-		OffsetDateTime currentTime = OffsetDateTime.now().withOffsetSameInstant(ZoneOffset.UTC);
+		System.out.println("Deleting short term and long term reservations older than " + oneMonthAgo);
+		timeslotRepository.deleteByStartTimeBefore(oneMonthAgo);
+		longtermReservationRepository.deleteByEndDateBefore(oneMonthAgo);
 
-		System.out.println("Deleting all timeslots which start before:" +currentTime);
-		timeslotRepository.deleteByStartTimeBefore(currentTime);
-		longtermReservationRepository.deleteByEndDateBefore(currentTime);
-
-		
-	}
-
-	//@Scheduled(cron="0 26 9 * * *")
-	public void addNewTimeSlotsIfNecessary(){
-
-		OffsetDateTime oldestStoredDate = timeslotRepository.findMinEndTime();
-		OffsetDateTime newestStoredDate = timeslotRepository.findMaxEndTime();
-
-		int daysBetween = 0;
-		OffsetDateTime slotGenerationStartDate;
-
-		if(newestStoredDate != null){
-			daysBetween = Math.round(ChronoUnit.DAYS.between(oldestStoredDate.toInstant(), newestStoredDate.toInstant()));
-			System.out.println("-------------------");
-			System.out.println("Oldest stored date:"+oldestStoredDate);
-			System.out.println("Newest stored date:"+newestStoredDate);
-			System.out.println("Days between:"+daysBetween);
-
-			slotGenerationStartDate=newestStoredDate.plusDays(1);
-		}else{
-			slotGenerationStartDate = OffsetDateTime.now();
-		}
-
-		System.out.println(slotGenerationStartDate);
-
-		for (int i = 0; i < reservationSystemConfiguration.getTimeSpanInDays()-daysBetween; i++) {
-			System.out.println("Adding slots for "+slotGenerationStartDate);
-
-			for(int hour = reservationSystemConfiguration.getMinHour(); hour<reservationSystemConfiguration.getMaxHour(); hour++){
-
-
-				for (int court = 1;court<=reservationSystemConfiguration.getCourtCount();court++){
-
-
-					OffsetDateTime timeslotStartDate = slotGenerationStartDate.withHour(hour).withMinute(0);
-					OffsetDateTime timeslotEndDate = slotGenerationStartDate.withHour(hour).withMinute(30);
-					Timeslot slot = new Timeslot(court, timeslotStartDate, timeslotEndDate);
-					reserveTimeslotIfLongTermReservationExists(slot);
-
-					timeslotRepository.save(slot);
-
-					timeslotStartDate = slotGenerationStartDate.withHour(hour).withMinute(30);
-					timeslotEndDate = slotGenerationStartDate.withHour(hour+1).withMinute(0);
-
-
-					Timeslot slot2 = new Timeslot(court, timeslotStartDate, timeslotEndDate);
-					reserveTimeslotIfLongTermReservationExists(slot2);
-
-					timeslotRepository.save(slot2);
-				}
-			}
-			slotGenerationStartDate=slotGenerationStartDate.plusDays(1);
-		}
-		
-
-	
-		
 	}
 
 	private void reserveTimeslotIfLongTermReservationExists(Timeslot timeslot) {

@@ -5,28 +5,30 @@ import Loader from "react-loader-spinner";
 import UserMessage from "./UserMessage";
 import {BACKEND_BASE_URL} from "../services/Constants";
 
-const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onEndTimeChange}) => {
+const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onEndTimeChange, reservedTimeslots}) => {
     const [endTime, setEndTime] = useState(TimeslotService.formatDate(new Date(selectedTimeslot.endTime)))
     const [startTime, setStartTime] = useState(TimeslotService.formatDate(new Date(selectedTimeslot.startTime)))
-    const [timeslotsAfterSelectedTimeslot, setTimeslotsAfterSelectedTimeslot] = useState(TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot));
-    const [slotIdsToReserve, setSlotIdsToReserve] = useState([selectedTimeslot.slotId]);
+    const [timeslotsAfterSelectedTimeslot, setTimeslotsAfterSelectedTimeslot] = useState(TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, reservedTimeslots, selectedTimeslot));
+    //const [slotIdsToReserve, setSlotIdsToReserve] = useState([selectedTimeslot.slotId]);
     const [showSubmitButtonLoad, setShowSubmitButtonLoad] = useState(false);
     const [error, setError] = useState(null);
+    const [reservationParams, setReservationParams] = useState(selectedTimeslot)
 
 
     const onReservationEndTimeChange = (event) => {
         const selectedTimeslotIds = TimeslotService.getTimeslotIdsForTimeRange(timeslots, selectedTimeslot.courtnumber,
             new Date(selectedTimeslot.startTime), new Date(timeslotsAfterSelectedTimeslot[event.target.selectedIndex].endTime));
-        setSlotIdsToReserve(selectedTimeslotIds);
+
+        setReservationParams({...reservationParams, selectedTimeslot: {...selectedTimeslot,endTime:new Date(timeslotsAfterSelectedTimeslot[event.target.selectedIndex].endTime).toISOString()}});
         setEndTime(event.target.value)
         onEndTimeChange(selectedTimeslotIds);
     }
 
     useEffect(() => {
         setTimeslotsAfterSelectedTimeslot(!TimeslotService.isSlotReserved(selectedTimeslot) ?
-            TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot) :
+            TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, reservedTimeslots,  selectedTimeslot) :
             TimeslotService.getMyReservedSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot, accountService.accountValue.name));
-        setSlotIdsToReserve([selectedTimeslot.slotId]);
+        setReservationParams({selectedTimeslot});
         setEndTime(TimeslotService.formatDate(new Date(selectedTimeslot.endTime)));
 
     }, [selectedTimeslot]);
@@ -41,16 +43,16 @@ const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onE
         e.preventDefault()
         const requestOptions = {
             method: 'PUT',
-            body: JSON.stringify(slotIdsToReserve)
+            body: JSON.stringify(reservationParams.selectedTimeslot)
         };
         setShowSubmitButtonLoad(true);
-        const backendURL = TimeslotService.isSlotReserved(selectedTimeslot) ? `${BACKEND_BASE_URL}/timeslots/cancel` :
+        const backendURL = TimeslotService.isSlotReserved(selectedTimeslot) ? `${BACKEND_BASE_URL}/timeslots/cancel/onetime/${selectedTimeslot.slotId}` :
             `${BACKEND_BASE_URL}/timeslots/reserve/${accountService.accountValue.name}`;
         fetch(backendURL, requestOptions)
             .then(response => response.json())
             .then(data => {
 
-                setSlotIdsToReserve([]);
+                setReservationParams({});
                 if(data.status>400){
                     onReservation({
                         errorMessage: data.message,

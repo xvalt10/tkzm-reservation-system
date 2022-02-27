@@ -11,15 +11,17 @@ import Modal from 'react-modal';
 import {MODAL_CUSTOM_STYLES} from "../services/Constants";
 import {faWindowClose} from "@fortawesome/free-solid-svg-icons";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import UserMessage from "./UserMessage";
+
 
 const Login = () => {
     let navigate = useNavigate();
+    const [userMessage , setUserMessage] = useState(null);
     const [showSignUpForm, setShowSignUpForm] = useState(false);
     const [showSignInForm, setShowSignInForm] = useState(false);
 
     let signUpSelectedClass = showSignUpForm ? 'is-info' : '';
     let signInSelectedClass = showSignInForm ? 'is-info' : '';
-
 
     const toggleShowSignUpForm = () => {
         setShowSignUpForm(true);
@@ -29,6 +31,11 @@ const Login = () => {
     const toggleShowSignInForm = () => {
         setShowSignUpForm(false);
         setShowSignInForm(true);
+    }
+
+    const onRegistrationSuccessful = () => {
+        toggleShowSignInForm();
+        setUserMessage("Registrácia používateľa bola úspešná, môžete sa prihlásiť do systému ako existujúci používateľ.");
     }
 
     useEffect(() => {
@@ -75,7 +82,7 @@ const Login = () => {
                 </div>
 
             </div>
-
+            {userMessage && <UserMessage message={userMessage} color={'light-green'}/>}
             {isMobile && <Modal isOpen={showSignInForm || showSignUpForm} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('root')}>
                 <FontAwesomeIcon onClick={()=>{setShowSignUpForm(false);setShowSignInForm(false)}} icon={faWindowClose} style={{marginRight:'5px',cursor:'pointer'}}/>
                 {showSignInForm && <SignInForm/>}
@@ -83,7 +90,7 @@ const Login = () => {
             </Modal>}
 
             {!isMobile && showSignInForm && <SignInForm/>}
-            {!isMobile && showSignUpForm && <SignUpForm/>}
+            {!isMobile && showSignUpForm && <SignUpForm onRegistrationSuccessful={onRegistrationSuccessful}/>}
         </>
     );
 }

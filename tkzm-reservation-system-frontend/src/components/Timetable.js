@@ -1,10 +1,18 @@
 import PropTypes from 'prop-types';
 import Timeslot from "./Timeslot";
 import TimeslotService from "../services/TimeslotService";
+import {useEffect} from "react";
 
-const Timetable = ({timeslots, onSelected}) => {
+const Timetable = ({timeslots, onSelected, reservedslots}) => {
     const rowCount = timeslots && Object.keys(timeslots).length !== 0 ? Object.keys(timeslots).length + 1 : 0;
     const columnCount = timeslots && Object.keys(timeslots).length !== 0 ? timeslots[Object.keys(timeslots)[0]].length + 1 : 0
+
+    useEffect(() => {
+
+            console.log("-Timetable-");
+            console.log(reservedslots);
+
+    }, [reservedslots])
     return (
         Object.keys(timeslots).length > 0 &&
         <div style={{
@@ -37,6 +45,17 @@ const Timetable = ({timeslots, onSelected}) => {
                         {timeslots[courtNo].sort((slot1,slot2)=>{return slot1.slotId - slot2.slotId}).map((slot, columnIndex) => {
                             return <Timeslot key={slot.slotId}
                                              slot={{...slot, row: rowIndex + 2, column: columnIndex + 2}} onSelected={onSelected}/>
+                        })}
+                    </>
+                )
+            })}
+
+            {Object.keys(reservedslots).map((courtNo) => {
+                return (
+                    <>
+                        {reservedslots[courtNo].map((slot) => {
+                            return <Timeslot key={slot.slotId}
+                                             slot={slot} onSelected={onSelected}/>
                         })}
                     </>
                 )

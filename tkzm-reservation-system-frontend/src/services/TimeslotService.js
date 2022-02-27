@@ -1,4 +1,5 @@
 import {BehaviorSubject} from "rxjs";
+import {RESERVATION_PARAMS} from "./Constants";
 const reservationCountSubject = new BehaviorSubject(0);
 
 const TimeslotService = {
@@ -8,24 +9,24 @@ const TimeslotService = {
     getReservationCountValueSubject: function(){
         return reservationCountSubject;
     },
-    removeFromReservedTimeslots: function (timeslots, slotIdsToRemove) {
-        let groupedTimeslots = {}
-        Object.keys(timeslots).forEach(courtNo => {
-            groupedTimeslots[courtNo] = timeslots[courtNo].filter((timeslotArray) => {
-                let timeslotIds = timeslotArray.map(slot => slot.slotId);
-                let timeslotArrayShouldBeRemoved = false
-                slotIdsToRemove.forEach(slotIdToRemove => {
-                    if (timeslotIds.includes(slotIdToRemove)) {
-                        timeslotArrayShouldBeRemoved = true;
-                    }
-                })
-                return !timeslotArrayShouldBeRemoved;
-            });
-            if (groupedTimeslots[courtNo].length === 0) {
-                delete groupedTimeslots[courtNo];
+    removeFromReservedTimeslots: function (reservations, slotsToRemove) {
+        let updatedReservedSlots = {}
+        Object.keys(reservations).forEach(courtNo => {
+                const filteredSlots = reservations[courtNo].filter(timeslot =>{
+                    return !slotsToRemove.map(slot => slot.slotId).includes(timeslot.slotId);}
+                );
+                if (filteredSlots.length > 0) {
+                    updatedReservedSlots[courtNo] = filteredSlots;
+                }
             }
-        })
-        return groupedTimeslots
+        );
+
+        // Object.keys(updatedReservedSlots).forEach(courtNo => {
+        //     if (updatedReservedSlots[courtNo].length == 0) {
+        //         delete updatedReservedSlots[courtNo];
+        //     }
+        // });
+        return updatedReservedSlots;
     },
     countReservationsByUser: function(timeslots,myusername){
         let filteredTimeslots = {}
@@ -38,7 +39,7 @@ const TimeslotService = {
                 });
             });
 
-        return this.countGroupedTimeslots(this.groupReservedTimeslots(filteredTimeslots));
+        return this.countTimeslots(this.groupReservedTimeslots(filteredTimeslots));
     },
     groupReservedTimeslots: function (timeslots) {
         let groupedTimeslots = {}
@@ -61,7 +62,7 @@ const TimeslotService = {
         })
         return groupedTimeslots
     },
-    countGroupedTimeslots: function (timeslots) {
+    countTimeslots: function (timeslots) {
         let counter = 0;
         Object.keys(timeslots).forEach(courtNo => {
             timeslots[courtNo].forEach(timeslotArray => {
@@ -134,12 +135,12 @@ const TimeslotService = {
         });
         return timeslotIdsForTimeRange;
     },
-    getVacantSlotsAfterSelectedTimeslot: function (timeslots, selectedTimeslot) {
+    getVacantSlotsAfterSelectedTimeslot: function (timeslots, reservedTimeslots, selectedTimeslot) {
         const timeslotsForSelectedDay = this.getTimeslotsByDateAndCourt(timeslots, new Date(selectedTimeslot.startTime), selectedTimeslot.courtnumber);
         let vacantSlotsAfterSelectedTimeslot = []
         let vacantSlotFound = false;
         for (let i = 0; i < timeslotsForSelectedDay.length; i++) {
-            if (vacantSlotFound && timeslotsForSelectedDay[i].username != null) {
+            if (vacantSlotFound && !this.isGeneratedSlotVacant (timeslotsForSelectedDay[i], reservedTimeslots ) ){
                 break;
             }
             if (timeslotsForSelectedDay[i].slotId >= selectedTimeslot.slotId) {
@@ -149,6 +150,28 @@ const TimeslotService = {
         }
         return vacantSlotsAfterSelectedTimeslot;
     },
+    isGeneratedSlotVacant: function(timeslot, reservedTimeslots) {
+        let slotVacant = true;
+        Object.keys(reservedTimeslots).forEach(courtNumber => {
+            reservedTimeslots[courtNumber].forEach(reservedSlot => {
+                    const timeslotStartDateTime = new Date(timeslot.startTime);
+                    const timeslotEndDateTime = new Date(timeslot.endTime);
+                    const reservedslotStartDateTime = new Date(reservedSlot.startTime);
+                    const reservedslotEndDateTime = new Date(reservedSlot.endTime);
+
+                    if (reservedSlot.courtnumber === timeslot.courtnumber &&
+                        reservedslotStartDateTime.getDate() === timeslotStartDateTime.getDate() &&
+                        reservedslotStartDateTime.getMonth() === timeslotStartDateTime.getMonth() &&
+                        timeslotStartDateTime.getTime() >= reservedslotStartDateTime.getTime() &&
+                        timeslotEndDateTime.getTime()  <= reservedslotEndDateTime.getTime()
+                    ) {
+                        slotVacant = false
+                    }
+            });
+        })
+        return slotVacant;
+    },
+
     getMyReservedSlotsAfterSelectedTimeslot: function (timeslots, selectedTimeslot, myUsername) {
         const timeslotsForSelectedDay = this.getTimeslotsByDateAndCourt(timeslots, new Date(selectedTimeslot.startTime), selectedTimeslot.courtnumber);
         let reservedByUserSlotsAfterSelectedTimeslot = []
@@ -206,6 +229,104 @@ const TimeslotService = {
 
     isSlotReserved: function (timeslot) {
         return timeslot.username != null;
+    },
+
+
+    generateTimetableData: function (startHour, endHour, noOfDays, noOfCourts){
+        let currentDateTime;
+        let timeslotStartDateTime;
+        let timeslotEndDateTime;
+        let timetableData = {}
+        let formattedDates = []
+        let timeslots = {}
+        let slotId = 1;
+        Date.prototype.addDays = function(days) {
+            let date = new Date(this.valueOf());
+            date.setDate(date.getDate() + days);
+            return date;
+        }
+        for (let court = 1; court <= noOfCourts; court++) {
+            timeslots[court] = [];
+            currentDateTime = new Date();
+            for (let day = 1; day <= noOfDays; day++) {
+                if(court === 1) {
+                    formattedDates.push(`${this.formatDateMonthDay(currentDateTime)} (${this.getDayOfWeek(currentDateTime)})`);
+                }
+                for (let hour = startHour; hour < endHour; hour++) {
+                    timeslotStartDateTime = new Date(currentDateTime);
+                    timeslotStartDateTime.setHours(hour,0,0,0);
+                    timeslotEndDateTime = new Date(currentDateTime);
+                    timeslotEndDateTime.setHours(hour,30,0, 0);
+
+                    timeslots[court].push({
+                        courtnumber: court,
+                        dayOfWeek: timeslotStartDateTime.getDay(),
+                        startTime: timeslotStartDateTime.toISOString(),
+                        endTime: timeslotEndDateTime.toISOString(),
+                        username: null,
+                        price: null,
+                        slotId: slotId++
+                    })
+
+                    timeslotStartDateTime = new Date(currentDateTime);
+                    timeslotStartDateTime.setHours(hour,30,0,0);
+                    timeslotEndDateTime = new Date(currentDateTime);
+                    timeslotEndDateTime.setHours(hour+1,0,0,0);
+
+                    timeslots[court].push({
+                        courtnumber: court,
+                        dayOfWeek: timeslotStartDateTime.getDay(),
+                        startTime: timeslotStartDateTime.toISOString(),
+                        endTime: timeslotEndDateTime.toISOString(),
+                        username: null,
+                        price: null,
+                        slotId: slotId++
+                    })
+                }
+                currentDateTime = currentDateTime.addDays(1);
+            }
+
+
+        }
+
+        timetableData.timeslots = timeslots;
+        timetableData.dates = formattedDates;
+        return timetableData;
+
+    },
+    addReservedTimeslotsToTimetable: function(generatedSlots, reservedSlots){
+        Object.keys(reservedSlots).forEach(courtNumber => {
+            reservedSlots[courtNumber].forEach(reservedSlot => {
+                generatedSlots[courtNumber].forEach((timeslot) => {
+                    const timeslotStartDateTime = new Date(timeslot.startTime);
+                    const timeslotEndDateTime = new Date(timeslot.endTime);
+                    const reservedslotStartDateTime = new Date(reservedSlot.startTime);
+                    const reservedslotEndDateTime = new Date(reservedSlot.endTime);
+
+                    if (reservedslotStartDateTime.getDate() === timeslotStartDateTime.getDate() &&
+                        reservedslotStartDateTime.getMonth() === timeslotStartDateTime.getMonth() &&
+                        timeslotStartDateTime.getTime() >= reservedslotStartDateTime.getTime() &&
+                        timeslotEndDateTime.getTime()  <= reservedslotEndDateTime.getTime()
+                    ) {
+                        timeslot.username = reservedSlot.username;
+                    }
+                });
+            });
+        })
+    },
+    addColumnAndRowToReservedSlots: function(reservedslots){
+        Object.keys(reservedslots).forEach(courtNumber => {
+            reservedslots[courtNumber].forEach(slot =>{
+            const startHours = new Date(slot.startTime).getHours();
+            const startMinutes = new Date(slot.startTime).getMinutes();
+            const endHours = new Date(slot.endTime).getHours();
+            const endMinutes = new Date(slot.endTime).getMinutes();
+            slot.row = slot.courtnumber+1;
+            slot.column = (startHours - RESERVATION_PARAMS.startHour) * 2 + (startMinutes/30)+2;
+            slot.columnEnd = (endHours - RESERVATION_PARAMS.startHour) * 2 + (endMinutes/30)+2;
+        });
+    });
+        return reservedslots;
     }
 
 

@@ -24,7 +24,7 @@ const Home = () => {
             .then(res => res.json())
             .then(timeslotsFromServer => {
                     const groupedTimeslots = TimeslotService.groupReservedTimeslots(timeslotsFromServer);
-                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.countGroupedTimeslots(groupedTimeslots));
+                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.countTimeslots(groupedTimeslots));
                 }
             ).catch(error => {
                 setError(error.message);
@@ -38,7 +38,7 @@ const Home = () => {
         const checkIfUserAuthenticated = Auth.currentAuthenticatedUser()
             .then(account => {
                 Auth.currentUserInfo().then(userInfo => {
-                    let username = userInfo.attributes.name ? userInfo.attributes.name : userInfo.username;
+                    let username = userInfo.attributes.name ? `${userInfo.attributes.name} ${userInfo.attributes.family_name}` : userInfo.username;
                     setAccount({name: username});
                     accountService.accountSubject.next({name: username});
                     getTimetableData()

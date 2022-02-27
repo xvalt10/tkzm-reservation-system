@@ -9,5 +9,8 @@ import java.util.List;
 public interface LongtermReservationRepository extends JpaRepository<LongtermReservation, Long> {
 
     List<LongtermReservation> findByUsername(String username);
+
+    List<LongtermReservation> findByUsernameAndStartDateAfter(String username, OffsetDateTime currentDate);
+
     void deleteByEndDateBefore(OffsetDateTime currentDate);
 }

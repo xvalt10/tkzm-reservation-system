@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import PropTypes from 'prop-types';
 import {accountService} from "../services/auth/AuthService";
 import OneTimeReservationTable from "../components/OneTimeReservationTable";
 import TimeslotService from "../services/TimeslotService";
@@ -11,13 +10,9 @@ import LongtermReservationTable from "../components/LongtermReservationTable";
 import Modal from "react-modal";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faWindowClose} from "@fortawesome/free-solid-svg-icons";
-import OneTimeReservationForm from "../components/OneTimeReservationForm";
-import LongtermReservationForm from "../components/LongtermReservationForm";
 
 const MyReservations = () => {
     const navigate = useNavigate();
-    const [slotsToCancel, setSlotsToCancel] = useState(null);
-    const [slotIdsToCancel, setSlotIdsToCancel] = useState(null);
     const [reservationToCancel, setReservationToCancel] = useState(null);
     const [longtermReservations, setLongtermReservations] = useState([]);
     const [reservedTimeslots, setReservedTimeslots] = useState({});
@@ -32,13 +27,13 @@ const MyReservations = () => {
             await fetch(`${BACKEND_BASE_URL}/timeslots/user/${accountService.accountValue.name}`)
                 .then(res => res.json())
                 .then(timeslotsFromServer => {
-                        const groupedTimeslots = TimeslotService.groupReservedTimeslots(timeslotsFromServer);
-                        if (Object.keys(groupedTimeslots).length === 0) {
+                        if (Object.keys(timeslotsFromServer).length === 0) {
                             setOneTimeReservationsEmpty(true)
                         } else {
-                            setReservedTimeslots(groupedTimeslots)
+                            setReservedTimeslots(timeslotsFromServer)
+                            console.log(timeslotsFromServer);
                         }
-                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.countGroupedTimeslots(groupedTimeslots));
+                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.countTimeslots(timeslotsFromServer));
                     }
                 ).catch(error => {
                     setError(error.message);
@@ -65,12 +60,13 @@ const MyReservations = () => {
 
     const openCancellationModal = (reservationType,reservationData) => {
         const reservation = JSON.parse(reservationData);
-        if (reservationType === RESERVATION_TYPES.LONGTERM) {
-            setReservationToCancel(reservation);
-        } else {
-            setSlotsToCancel(reservation);
-            setSlotIdsToCancel(reservation.map(slot=>slot.slotId));
-        }
+        setReservationToCancel({'type':reservationType, 'reservationData':reservation});
+        // if (reservationType === RESERVATION_TYPES.LONGTERM) {
+        //     setReservationToCancel(reservation);
+        // } else {
+        //     setSlotsToCancel(reservation);
+        //     setSlotIdsToCancel(reservation.map(slot=>slot.slotId));
+        // }
     }
 
     const cancelLongTermReservation = () => {
@@ -79,27 +75,28 @@ const MyReservations = () => {
             method: 'PUT'
         };
         setShowSpinner(true)
-        const backendURL = `${BACKEND_BASE_URL}/timeslots/cancel/${reservationToCancel.id}`;
+        const backendURL = `${BACKEND_BASE_URL}/timeslots/cancel/longterm/${reservationToCancel.reservationData.id}`;
         fetch(backendURL, requestOptions)
             .then(response => response.json())
-            .then(data => {
-                    console.log(data);
+            .then(canceledSlots => {
+                    console.log(canceledSlots);
                     setShowSpinner(false);
-                    const slotIdsToCancel = data.map(slot => slot.slotId);
-                    const remainingtimeslots = TimeslotService.removeFromReservedTimeslots(reservedTimeslots, slotIdsToCancel);
 
-                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.countGroupedTimeslots(remainingtimeslots));
+                    const remainingtimeslots = TimeslotService.removeFromReservedTimeslots(reservedTimeslots, canceledSlots);
+                    console.log(remainingtimeslots);
+                    //TimeslotService.getReservationCountValueSubject().next(TimeslotService.countGroupedTimeslots(remainingtimeslots));
+                TimeslotService.getReservationCountValueSubject().next(TimeslotService.countTimeslots(remainingtimeslots));
                     setReservedTimeslots(remainingtimeslots);
                     if (Object.keys(remainingtimeslots).length === 0) {
                         setOneTimeReservationsEmpty(true)
                     }
-                    const remainingLongtermReservations = longtermReservations.filter(reservation2 => reservation2.id !== reservationToCancel.id);
+                    const remainingLongtermReservations = longtermReservations.filter(reservation2 => reservation2.id !== reservationToCancel.reservationData.id);
                     setLongtermReservations(remainingLongtermReservations);
                     if(remainingLongtermReservations.length === 0 ){
                         setLongtermReservationsEmpty(true);
                     }
 
-                    setUserMessage(`Dlhodobá rezervácia dvorca ${reservationToCancel.courtNumber} ${TimeslotService.formatDateLongTermReservationLong(reservationToCancel)} bola zrušená.`);
+                    setUserMessage(`Dlhodobá rezervácia dvorca ${reservationToCancel.reservationData.courtNumber} ${TimeslotService.formatDateLongTermReservationLong(reservationToCancel.reservationData)} bola zrušená.`);
 
                 }
             ).catch(error => {
@@ -109,30 +106,30 @@ const MyReservations = () => {
 
     }
     const cancelOnetimeReservation = () => {
-        setSlotsToCancel(null);
-        setSlotIdsToCancel(null);
         const requestOptions = {
-            method: 'PUT',
-            body: JSON.stringify(slotIdsToCancel)
+            method: 'PUT'
         };
         setShowSpinner(true)
-        const backendURL = `${BACKEND_BASE_URL}/timeslots/cancel`;
+        const backendURL = `${BACKEND_BASE_URL}/timeslots/cancel/onetime/${reservationToCancel.reservationData.slotId}`;
         fetch(backendURL, requestOptions)
             .then(response => response.json())
-            .then(data => {
+            .then(canceledReservation => {
                     setShowSpinner(false);
-                    const remainingtimeslots = TimeslotService.removeFromReservedTimeslots(reservedTimeslots, slotIdsToCancel);
-                    setReservedTimeslots(remainingtimeslots);
-                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.getReservationCountValueSubject().value -1);
-                    if (Object.keys(remainingtimeslots).length === 0) {
-                        setOneTimeReservationsEmpty(true)
+                    if(canceledReservation) {
+                        const remainingtimeslots = TimeslotService.removeFromReservedTimeslots(reservedTimeslots, [canceledReservation]);
+                        setReservedTimeslots(remainingtimeslots);
+                        TimeslotService.getReservationCountValueSubject().next(TimeslotService.getReservationCountValueSubject().value - 1);
+                        if (Object.keys(remainingtimeslots).length === 0) {
+                            setOneTimeReservationsEmpty(true)
+                        }
+                        setUserMessage(`Rezervácia dvorca ${canceledReservation.courtnumber} od ${TimeslotService.formatDate(new Date(canceledReservation.startTime))} do ${TimeslotService.formatDate(new Date(canceledReservation.endTime))} bola zrušená.`);
                     }
-                    setUserMessage(`Rezervácia dvorca ${data[0].courtnumber} od ${TimeslotService.formatDate(new Date(data[0].startTime))} do ${TimeslotService.formatDate(new Date(data[data.length - 1].endTime))} bola zrušená.`);
-                }
+                    }
             ).catch(error => {
             setError(error.message);
             console.log(error)
         })
+        setReservationToCancel(null);
     }
 
     useEffect(() => {
@@ -162,22 +159,22 @@ const MyReservations = () => {
             {!longtermReservationsEmpty && <LongtermReservationTable longtermReservations={longtermReservations} onCancellation={openCancellationModal}/>}
             {longtermReservationsEmpty && <p className={'subtitle is-6 is-spaced'}>Nemáte zadanú žiadnu dlhodobú rezerváciu.</p>}
 
-            {reservationToCancel && <Modal isOpen={reservationToCancel !== null} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('main-pane')}>
+            {reservationToCancel && <Modal isOpen={reservationToCancel.type===RESERVATION_TYPES.LONGTERM} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('main-pane')}>
 
                 <div className={'flexVerticalDivCentered'}>
                     <FontAwesomeIcon onClick={()=>{setReservationToCancel(null);}} icon={faWindowClose} style={{margin:'5px',cursor:'pointer',alignSelf:'end'}}/>
-                    <span className={'is-spaced'}>{`Naozaj chcete zrušiť dlhodobú rezerváciu dvorca ${reservationToCancel.courtNumber} ${TimeslotService.formatDateLongTermReservationLong(reservationToCancel)}?`}</span>
+                    <span className={'is-spaced'}>{`Naozaj chcete zrušiť dlhodobú rezerváciu dvorca ${reservationToCancel.reservationData.courtNumber} ${TimeslotService.formatDateLongTermReservationLong(reservationToCancel.reservationData)}?`}</span>
                     <button className="button is-rounded is-info" onClick={cancelLongTermReservation}>Potvrdzujem zrušenie</button>
                 </div>
 
 
             </Modal>}
 
-            {slotIdsToCancel && <Modal isOpen={slotIdsToCancel !== null} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('main-pane')}>
+            {reservationToCancel && <Modal isOpen={reservationToCancel.type===RESERVATION_TYPES.ONETIME} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('main-pane')}>
 
                 <div className={'flexVerticalDivCentered'}>
-                    <FontAwesomeIcon onClick={()=>{setSlotIdsToCancel(null);}} icon={faWindowClose} style={{margin:'5px',cursor:'pointer',alignSelf:'end'}}/>
-                    <span className={'is-spaced'}>{`Naozaj chcete zrušiť rezerváciu dvorca ${slotsToCancel[0].courtnumber} od ${TimeslotService.formatDate(new Date(slotsToCancel[0].startTime))} do ${TimeslotService.formatDate(new Date(slotsToCancel[slotsToCancel.length - 1].endTime))}?`}</span>
+                    <FontAwesomeIcon onClick={()=>{setReservationToCancel(null);}} icon={faWindowClose} style={{margin:'5px',cursor:'pointer',alignSelf:'end'}}/>
+                    <span className={'is-spaced'}>{`Naozaj chcete zrušiť rezerváciu dvorca ${reservationToCancel.reservationData.courtnumber} od ${TimeslotService.formatDate(new Date(reservationToCancel.reservationData.startTime))} do ${TimeslotService.formatDate(new Date(reservationToCancel.reservationData.endTime))}?`}</span>
                     <button className="button is-rounded is-info" onClick={cancelOnetimeReservation}>Potvrdzujem zrušenie</button>
                 </div>
 
