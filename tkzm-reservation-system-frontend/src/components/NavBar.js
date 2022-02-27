@@ -1,4 +1,6 @@
-import logo from '../images/tkzm_logo3.png';
+import logo_small from '../images/tkzm_logo_32.png';
+import logo_medium from '../images/tkzm_logo_64.png';
+import logo_large from '../images/tkzm_logo3.png';
 import {accountService} from "../services/auth/AuthService";
 import {NavLink, useNavigate} from "react-router-dom";
 import {useEffect, useState} from "react";
@@ -28,9 +30,9 @@ const Navbar = () => {
             <nav className="navbar is-tablet is-spaced">
                 <div className="container">
                     <div className="navbar-brand"><a href="/" className="navbar-item active"><img
-                        src={logo} alt="Favicon.io Logo" style={{height:'80px'}}/><span className={'title is-5'}>TK ZM - Rezervácie</span></a>
+                        srcSet={`${logo_small} 300w, ${logo_medium} 768w, ${logo_large} 1280w`} alt="Favicon.io Logo" style={{maxWidth:'85px'}}/><span className={'title is-5'}>TK ZM - Rezervácie</span></a>
                         <div data-target="navbar" className={`navbar-burger burger ${showMenuItems?'is-active':''}`} onClick={toggleMenu}>
-                            <span></span><span></span><span></span></div>
+                            </div>
                     </div>
                     { account && <div id="navbar" className={`navbar-menu ${showMenuItems?'is-active':''}`}>
                         <div className="navbar-start has-text-weight-bold">

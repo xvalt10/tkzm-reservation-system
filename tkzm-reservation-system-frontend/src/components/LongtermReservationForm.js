@@ -7,12 +7,12 @@ import {BACKEND_BASE_URL} from "../services/Constants";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const LongtermReservationForm = ({timeslots, selectedTimeslot, onReservation, onEndTimeChange}) => {
+const LongtermReservationForm = ({timeslots,reservedTimeslots, selectedTimeslot, onReservation, onEndTimeChange}) => {
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
     const [endTime, setEndTime] = useState(TimeslotService.formatDateShort(new Date(selectedTimeslot.endTime)))
     const [startTime, setStartTime] = useState(TimeslotService.formatDateShort(new Date(selectedTimeslot.startTime)))
-    const [timeslotsAfterSelectedTimeslot, setTimeslotsAfterSelectedTimeslot] = useState(TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot));
+    const [timeslotsAfterSelectedTimeslot, setTimeslotsAfterSelectedTimeslot] = useState(TimeslotService.getTimeslotsByDateAndCourt(timeslots, new Date(selectedTimeslot.startTime), selectedTimeslot.courtnumber));
     const [longtermReservationParams, setLongtermReservationParams] = useState(
         {
             'courtNumber': selectedTimeslot.courtnumber,
@@ -53,7 +53,7 @@ const LongtermReservationForm = ({timeslots, selectedTimeslot, onReservation, on
 
     useEffect(() => {
         setTimeslotsAfterSelectedTimeslot(!TimeslotService.isSlotReserved(selectedTimeslot) ?
-            TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot) :
+            TimeslotService.getTimeslotsByDateAndCourt(timeslots, new Date(selectedTimeslot.startTime), selectedTimeslot.courtnumber):
             TimeslotService.getMyReservedSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot, accountService.accountValue.name));
         setLongtermReservationParams(
             {

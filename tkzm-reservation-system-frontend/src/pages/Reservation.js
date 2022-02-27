@@ -17,6 +17,8 @@ const Reservation = ({}) => {
     const selectedDateSelectBox = useRef(null);
     let loadDataIntervalId = null;
     const [timeslots, setTimeslots] = useState(null);
+    const [reservedSlots, setReservedSlots] = useState({});
+    const [reservedSlotsPerDay, setReservedSlotsPerDay] = useState([]);
     const [selectedDate, setSelectedDate] = useState(null);
     const [timeslotsPerDay, setTimeslotsPerDay] = useState({});
     const [reservationStatus, setReservationStatus] = useState(null);
@@ -25,45 +27,38 @@ const Reservation = ({}) => {
     const [error, setError] = useState(null);
     const [reservationType, setReservationType] = useState(RESERVATION_TYPES.ONETIME);
 
-    function displayTimeslotsForSelectedDay(timeslots, date) {
+    function displayTimeslotsForSelectedDay(timeslots, reservedslots, date) {
         const datetokens = date.split(" ")[0].split(".")
         const day = +datetokens[0]
         const month = +datetokens[1]
         setTimeslotsPerDay(TimeslotService.getTimeslotsByDayMonth(timeslots, day, month));
+        setReservedSlotsPerDay(TimeslotService.getTimeslotsByDayMonth(reservedslots, day, month))
     }
 
     function loadTimetableData() {
         const getTimetableData = async () => {
-            let slots = []
+            let reservedSlots = {}
             await fetch(`${BACKEND_BASE_URL}/timeslots/byCourt`)
                 .then(res => res.json())
-                .then(timeslotsFromServer => {
-                    console.log(timeslotsFromServer)
-                        slots = timeslotsFromServer;
-                        TimeslotService.getReservationCountValueSubject().next(TimeslotService.countReservationsByUser(slots,accountService.accountValue.name));
-                        setTimeslots(timeslotsFromServer)
+                .then(reservedSlotsFromServer => {
+                        console.log(reservedSlotsFromServer)
+                        reservedSlots = TimeslotService.addColumnAndRowToReservedSlots(reservedSlotsFromServer);
+                        TimeslotService.getReservationCountValueSubject().next(TimeslotService.countReservationsByUser(reservedSlots, accountService.accountValue.name));
+                        let {timeslots, dates} = TimeslotService.generateTimetableData(6, 22, 14, 5);
+                       // TimeslotService.addReservedTimeslotsToTimetable(timeslots, reservedSlots);
+                        console.log(timeslots);
+                        setTimeslots(timeslots);
+                        setDatesForReservation(dates);
+                        setReservedSlots(reservedSlots);
+                        setSelectedDate(prevSelectedDate => prevSelectedDate == null ? dates[0] : prevSelectedDate);
+                        displayTimeslotsForSelectedDay(timeslots, reservedSlots, dates[selectedDateSelectBox.current ? selectedDateSelectBox.current.selectedIndex : 0]);
+                       // setError(null);
                     }
                 ).catch(error => {console.log(error); setError("Načítanie dát nebolo úspešne. Skúste stránku znova načítať.")})
-
-            await fetch(`${BACKEND_BASE_URL}/timeslots/uniqueDates`)
-                .then(res => res.json())
-                .then(dates => {
-                        if (dates.length == 0) {
-                            setError("Načítanie dát nebolo úspešné.")
-                        } else {
-                            setDatesForReservation(dates)
-                            setSelectedDate(prevSelectedDate => prevSelectedDate == null ? dates[0]:prevSelectedDate);
-                            displayTimeslotsForSelectedDay(slots, dates[selectedDateSelectBox.current.selectedIndex]);
-                        }
-                    }
-                ).catch(error => {console.log(error);setError("Načítanie dát nebolo úspešne. Skúste stránku znova načítať.")})
-
         }
         getTimetableData();
 
     }
-
-
 
     useEffect(() => {
         if (!accountService.accountValue) {
@@ -80,7 +75,7 @@ const Reservation = ({}) => {
 
     const onReservationDateChanged = (event) => {
         setSelectedDate(datesForReservation[event.target.selectedIndex]);
-        displayTimeslotsForSelectedDay(timeslots, datesForReservation[event.target.selectedIndex]);
+        displayTimeslotsForSelectedDay(timeslots, reservedSlots, datesForReservation[event.target.selectedIndex]);
     }
 
     const onReservationTypeChanged = (event) => {
@@ -89,7 +84,7 @@ const Reservation = ({}) => {
     const onTimeslotSelected = (timeslot) => {
         console.log(timeslot);
         console.log(accountService.accountValue);
-        if (!timeslot.username|| timeslot.username === accountService.accountValue.name) {
+        if (!timeslot.username || timeslot.username === accountService.accountValue.name) {
             timeslot.selected = true
             setSelectedTimeslot(timeslot)
             setTimeslotsPerDay(TimeslotService.markTimeslots(timeslotsPerDay, [timeslot.slotId]))
@@ -161,7 +156,7 @@ const Reservation = ({}) => {
             </div>}
 
             {reservationStatus && <h4 className={'user-message'}>{reservationStatus}</h4>}
-            {timeslots && <Timetable timeslots={timeslotsPerDay} onSelected={onTimeslotSelected}/>}
+            {timeslots && <Timetable timeslots={timeslotsPerDay} onSelected={onTimeslotSelected} reservedslots={reservedSlotsPerDay}/>}
 
 
 
@@ -173,9 +168,9 @@ const Reservation = ({}) => {
                     <input type="radio" value={RESERVATION_TYPES.LONGTERM} name="reservation-type" checked={reservationType === RESERVATION_TYPES.LONGTERM}/> Dlhodobá
                 </div></div>}
                 {selectedTimeslot && reservationType===RESERVATION_TYPES.ONETIME && <OneTimeReservationForm timeslots={timeslotsPerDay} selectedTimeslot={selectedTimeslot}
-                                        onReservation={onReservation} onEndTimeChange={onEndTimeChange} />}
+                                        onReservation={onReservation} onEndTimeChange={onEndTimeChange} reservedTimeslots={reservedSlots}/>}
                 {selectedTimeslot && !TimeslotService.isSlotReserved(selectedTimeslot) && reservationType===RESERVATION_TYPES.LONGTERM && <LongtermReservationForm timeslots={timeslotsPerDay} selectedTimeslot={selectedTimeslot}
-                                                                                                             onReservation={onLongtermReservation} onEndTimeChange={onEndTimeChange}/>}
+                                                                                                             onReservation={onLongtermReservation} onEndTimeChange={onEndTimeChange} reservedTimeslots={reservedSlots}/>}
             </Modal>
 
 

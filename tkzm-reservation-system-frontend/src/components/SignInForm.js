@@ -7,7 +7,7 @@ import {BACKEND_BASE_URL} from "../services/Constants";
 import TimeslotService from "../services/TimeslotService";
 import ButtonWithSpinner from "./ButtonWithSpinner";
 
-const SignInForm = () => {
+const SignInForm = ({onUserNotConfirmed}) => {
     let authenticationErrorSubscription;
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -34,7 +34,7 @@ const SignInForm = () => {
             .then(res => res.json())
             .then(timeslotsFromServer => {
                     const groupedTimeslots = TimeslotService.groupReservedTimeslots(timeslotsFromServer);
-                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.countGroupedTimeslots(groupedTimeslots));
+                    TimeslotService.getReservationCountValueSubject().next(TimeslotService.countTimeslots(groupedTimeslots));
                 }
             ).catch(error => {
                 setError(error.message);
@@ -51,7 +51,7 @@ const SignInForm = () => {
                 return Auth.currentAuthenticatedUser();
             })
             .then(user => {
-                console.log(user);
+                    console.log(user);
                     if (user) {
                         accountService.accountSubject.next({name: user.username});
                         getTimetableData();
@@ -91,9 +91,12 @@ const SignInForm = () => {
                     case 'User does not exist.':
                         setError(`Užívateľ neexistuje.`);
                         break;
+                    case 'User is not confirmed.':
+                        onUserNotConfirmed();
+                        break;
                     default:
                         console.log(err.message);
-                        setError(`Pri prihlásení sa vyskytla chyba.:`+err.message);
+                        setError(`Pri prihlásení sa vyskytla chyba.:` + err.message);
                 }
             });
     };
@@ -103,7 +106,8 @@ const SignInForm = () => {
             {error && <UserMessage message={error} color={'red'}/>}
             <div style={{'borderBottom': '1px solid black', 'paddingBottom': '0.7rem'}}>
                 <div className='form-control'>
-                    <ButtonWithSpinner showSpinner={facebookButtonSpinner} onClickFunction={signInViaFacebook} text={'Prihlásiť sa cez Facebook'} />
+                    <ButtonWithSpinner showSpinner={facebookButtonSpinner} onClickFunction={signInViaFacebook}
+                                       text={'Prihlásiť sa cez Facebook'}/>
                 </div>
             </div>
             <div className="flex-row-container">
@@ -129,7 +133,8 @@ const SignInForm = () => {
                                 placeholder="password"
                             />
                         </div>
-                        <ButtonWithSpinner showSpinner={!signInFinished} onClickFunction={signInViaForm} text={'Prihlásiť sa'} />
+                        <ButtonWithSpinner showSpinner={!signInFinished} onClickFunction={signInViaForm}
+                                           text={'Prihlásiť sa'}/>
 
                     </form>
                 </div>

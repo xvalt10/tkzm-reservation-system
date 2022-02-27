@@ -7,6 +7,7 @@ import {RESERVATION_TYPES} from "../services/Constants";
 const OneTimeReservationTable = ({reservedTimeslots, onCancellation}) => {
     const [spinnerStatuses, setSpinnerStatuses] = useState([]);
     useEffect(() => {
+        console.log(reservedTimeslots);
         const spinnerDefaultStatuses = [];
         Object.keys(reservedTimeslots).forEach(courtNumber => {
             reservedTimeslots[courtNumber].forEach(slotIdsArray => spinnerDefaultStatuses.push(false));
@@ -36,14 +37,14 @@ const OneTimeReservationTable = ({reservedTimeslots, onCancellation}) => {
             <Tbody>
                 {Object.keys(reservedTimeslots).map((courtNumber) => {
                     return (
-                        reservedTimeslots[courtNumber].map((slotIdsArray, index) => {
+                        reservedTimeslots[courtNumber].map((slot, index) => {
                             return (<Tr key={'row' - index}>
                                 <Td key={'row' - index - '1'}>{courtNumber}</Td>
-                                <Td key={'row' - index - '2'}>{TimeslotService.formatDate(new Date(slotIdsArray[0].startTime))}</Td>
-                                <Td key={'row' - index - '3'}>{TimeslotService.formatDate(new Date(slotIdsArray[slotIdsArray.length - 1].endTime))}</Td>
+                                <Td key={'row' - index - '2'}>{TimeslotService.formatDate(new Date(slot.startTime))}</Td>
+                                <Td key={'row' - index - '3'}>{TimeslotService.formatDate(new Date(slot.endTime))}</Td>
                                 <Td key={'row' - index - '4'}>
                                     <button key={'button' - index - '4'} className="button is-info"
-                                            data-slots={JSON.stringify(slotIdsArray)}
+                                            data-slots={JSON.stringify(slot)}
                                             onClick={cancelReservation}>
                                         {/*<div style={{display: 'flex'}}>
                                         {spinnerStatuses[index]!==false && <Loader
