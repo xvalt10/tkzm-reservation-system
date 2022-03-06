@@ -77,8 +77,8 @@ const SignInForm = ({onUserNotConfirmed}) => {
                 setSignInFinished(true);
                 setEmail("");
                 setPassword("");
-
-                accountService.accountSubject.next({name: user.username,});
+                let username = user.attributes.name ? `${user.attributes.name} ${user.attributes.family_name}` : user.username;
+                accountService.accountSubject.next({name: username});
                 getTimetableData();
 
             })

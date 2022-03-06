@@ -32,7 +32,10 @@ const Navbar = () => {
                     <div className="navbar-brand"><a href="/" className="navbar-item active"><img
                         srcSet={`${logo_small} 300w, ${logo_medium} 768w, ${logo_large} 1280w`} alt="Favicon.io Logo" style={{maxWidth:'85px'}}/><span className={'title is-5'}>TK ZM - Rezervácie</span></a>
                         <div data-target="navbar" className={`navbar-burger burger ${showMenuItems?'is-active':''}`} onClick={toggleMenu}>
-                            </div>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
                     </div>
                     { account && <div id="navbar" className={`navbar-menu ${showMenuItems?'is-active':''}`}>
                         <div className="navbar-start has-text-weight-bold">
