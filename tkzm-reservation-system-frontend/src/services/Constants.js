@@ -1,7 +1,12 @@
-export const BACKEND_BASE_URL=process.env.REACT_APP_API_URL
+export const BACKEND_BASE_URL='http://localhost:8080'
 export const RESERVATION_TYPES = {
     'LONGTERM':'longterm',
     'ONETIME':'onetime'
+}
+
+export const VIEW_MODES = {
+    'ONEDAY':'one-day',
+    'FIVEDAYS':'five-days'
 }
 
 export const RESERVATION_PARAMS = {
