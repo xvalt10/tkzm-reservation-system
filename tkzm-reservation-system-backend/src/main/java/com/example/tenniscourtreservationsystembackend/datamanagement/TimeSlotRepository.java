@@ -13,14 +13,18 @@ public interface TimeSlotRepository extends JpaRepository<Timeslot, Long>{
 
 	void deleteByStartTimeBefore(OffsetDateTime date);
 
-	List<Timeslot> findByStartTimeAfter(OffsetDateTime currentDate);
+	List<Timeslot> findByStartTimeBetween(OffsetDateTime startDateTime, OffsetDateTime endDateTime);
 
 	List<Timeslot> findByDayOfWeekAndCourtnumber(Integer dayOfWeek, Integer courtNumber);
-
-	List<Timeslot> findByUsernameAndStartTimeAfterOrderBySlotId(String username, OffsetDateTime currentDate);
 
 	List<Timeslot> findByCourtnumberAndStartTimeBetween(Integer courtNumber, OffsetDateTime reservationStartTime, OffsetDateTime reservationEndTime);
 
 	List<Timeslot> findByUsername(String username);
+
+	List<Timeslot> findByUsernameAndStartTimeBetweenOrderBySlotId(String username, OffsetDateTime startDateTime, OffsetDateTime endDateTime);
+
+	List<Timeslot> findByUsernameAndStartTimeBetween(String username, OffsetDateTime startDateTime, OffsetDateTime endDateTime);
+
+	List<Timeslot> findByUsernameAndStartTimeBetweenOrderByStartTime(String username, OffsetDateTime startDateTime, OffsetDateTime endDateTime);
 
 }

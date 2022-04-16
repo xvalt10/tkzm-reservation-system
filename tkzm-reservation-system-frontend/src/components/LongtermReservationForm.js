@@ -4,12 +4,14 @@ import {accountService} from "../services/auth/AuthService";
 import Loader from "react-loader-spinner";
 import UserMessage from "./UserMessage";
 import {BACKEND_BASE_URL} from "../services/Constants";
-import DatePicker from "react-datepicker";
+import DatePicker, {registerLocale} from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import sk from "date-fns/locale/sk";
+registerLocale('sk', sk);
 
 const LongtermReservationForm = ({timeslots,reservedTimeslots, selectedTimeslot, onReservation, onEndTimeChange}) => {
-    const [startDate, setStartDate] = useState(new Date());
-    const [endDate, setEndDate] = useState(new Date());
+    const [startDate, setStartDate] = useState(new Date(selectedTimeslot.startTime));
+    const [endDate, setEndDate] = useState(new Date(selectedTimeslot.startTime));
     const [endTime, setEndTime] = useState(TimeslotService.formatDateShort(new Date(selectedTimeslot.endTime)))
     const [startTime, setStartTime] = useState(TimeslotService.formatDateShort(new Date(selectedTimeslot.startTime)))
     const [timeslotsAfterSelectedTimeslot, setTimeslotsAfterSelectedTimeslot] = useState(TimeslotService.getTimeslotsByDateAndCourt(timeslots, new Date(selectedTimeslot.startTime), selectedTimeslot.courtnumber));
@@ -53,7 +55,7 @@ const LongtermReservationForm = ({timeslots,reservedTimeslots, selectedTimeslot,
 
     useEffect(() => {
         setTimeslotsAfterSelectedTimeslot(!TimeslotService.isSlotReserved(selectedTimeslot) ?
-            TimeslotService.getTimeslotsByDateAndCourt(timeslots, new Date(selectedTimeslot.startTime), selectedTimeslot.courtnumber):
+            TimeslotService.getSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot):
             TimeslotService.getMyReservedSlotsAfterSelectedTimeslot(timeslots, selectedTimeslot, accountService.accountValue.name));
         setLongtermReservationParams(
             {
@@ -161,12 +163,12 @@ const LongtermReservationForm = ({timeslots,reservedTimeslots, selectedTimeslot,
                 <div style={{display: 'flex', flexDirection: 'row', justifyItems: 'space-evennly'}}>
                     <div className='form-control'>
                         <label>V období od:</label>
-                        <DatePicker selected={startDate} onChange={(date) => onStartDateChange(date)}/>
+                        <DatePicker selected={startDate} dateFormat={'dd.MM.yyyy'} locale="sk" onChange={(date) => onStartDateChange(date)}/>
                     </div>
 
                     <div className='form-control'>
                         <label>V období do:</label>
-                        <DatePicker selected={endDate} onChange={(date) => onEndDateChange(date)}/>
+                        <DatePicker selected={endDate} dateFormat={'dd.MM.yyyy'} locale="sk" onChange={(date) => onEndDateChange(date)}/>
                     </div>
                 </div>
                 {/*<input className={'btn'} type='submit' value className='btn btn-block'/>*/}

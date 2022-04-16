@@ -10,7 +10,7 @@ public interface LongtermReservationRepository extends JpaRepository<LongtermRes
 
     List<LongtermReservation> findByUsername(String username);
 
-    List<LongtermReservation> findByUsernameAndStartDateAfter(String username, OffsetDateTime currentDate);
+    List<LongtermReservation> findByUsernameAndEndDateAfter(String username, OffsetDateTime currentDate);
 
     void deleteByEndDateBefore(OffsetDateTime currentDate);
 }

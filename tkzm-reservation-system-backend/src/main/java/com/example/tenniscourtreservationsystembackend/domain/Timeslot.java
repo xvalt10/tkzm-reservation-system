@@ -43,6 +43,8 @@ public class Timeslot implements Serializable {
 	@Column(name = "day_of_week")
 	private Integer dayOfWeek;
 
+	private String description;
+
 	public Integer getDayOfWeek() {
 		return dayOfWeek;
 	}
@@ -109,4 +111,11 @@ public class Timeslot implements Serializable {
 		this.username = username;
 	}
 
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
 }

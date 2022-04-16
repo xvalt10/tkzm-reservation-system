@@ -14,7 +14,7 @@ const ButtonWithSpinner = ({showSpinner, text, onClickFunction}) => {
     }, [showSpinner]);
 
     return (
-        <button className="button is-rounded is-info" onClick={(e) => onClickAction(e)}>
+        <button className="button is-info fullwidth" onClick={(e) => onClickAction(e)}>
             <div style={{display: 'flex', alignItems: 'center'}}>
                 {showSpinner && <Loader
                     type="TailSpin"

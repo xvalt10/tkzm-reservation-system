@@ -7,21 +7,27 @@ import {BACKEND_BASE_URL} from "../services/Constants";
 
 const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onEndTimeChange, reservedTimeslots}) => {
     const [endTime, setEndTime] = useState(TimeslotService.formatDate(new Date(selectedTimeslot.endTime)))
+    const [endTimeString, setEndTimeString] = useState("");
+    const [description, setDescription] = useState(null);
     const [startTime, setStartTime] = useState(TimeslotService.formatDate(new Date(selectedTimeslot.startTime)))
     const [timeslotsAfterSelectedTimeslot, setTimeslotsAfterSelectedTimeslot] = useState(TimeslotService.getVacantSlotsAfterSelectedTimeslot(timeslots, reservedTimeslots, selectedTimeslot));
-    //const [slotIdsToReserve, setSlotIdsToReserve] = useState([selectedTimeslot.slotId]);
     const [showSubmitButtonLoad, setShowSubmitButtonLoad] = useState(false);
     const [error, setError] = useState(null);
     const [reservationParams, setReservationParams] = useState(selectedTimeslot)
 
 
     const onReservationEndTimeChange = (event) => {
-        const selectedTimeslotIds = TimeslotService.getTimeslotIdsForTimeRange(timeslots, selectedTimeslot.courtnumber,
-            new Date(selectedTimeslot.startTime), new Date(timeslotsAfterSelectedTimeslot[event.target.selectedIndex].endTime));
-
-        setReservationParams({...reservationParams, selectedTimeslot: {...selectedTimeslot,endTime:new Date(timeslotsAfterSelectedTimeslot[event.target.selectedIndex].endTime).toISOString()}});
+        const selectedTimeslotIds = TimeslotService.getTimeslotIdsForTimeRange(timeslots, selectedTimeslot.courtnumber, new Date(selectedTimeslot.startTime), new Date(timeslotsAfterSelectedTimeslot[event.target.selectedIndex].endTime));
+        const selectedEndTimeString = new Date(timeslotsAfterSelectedTimeslot[event.target.selectedIndex].endTime).toISOString();
+        setReservationParams({...reservationParams, selectedTimeslot: {...selectedTimeslot,description,endTime:selectedEndTimeString}});
         setEndTime(event.target.value)
+        setEndTimeString(selectedEndTimeString);
         onEndTimeChange(selectedTimeslotIds);
+    }
+
+    const onDescriptionChange = (event) => {
+        setDescription(event.target.value);
+        setReservationParams({...reservationParams, selectedTimeslot: {...selectedTimeslot,description:event.target.value, endTime:endTimeString}});
     }
 
     useEffect(() => {
@@ -45,6 +51,7 @@ const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onE
             method: 'PUT',
             body: JSON.stringify(reservationParams.selectedTimeslot)
         };
+        console.log(reservationParams.selectedTimeslot);
         setShowSubmitButtonLoad(true);
         const backendURL = TimeslotService.isSlotReserved(selectedTimeslot) ? `${BACKEND_BASE_URL}/timeslots/cancel/onetime/${selectedTimeslot.slotId}` :
             `${BACKEND_BASE_URL}/timeslots/reserve/${accountService.accountValue.name}`;
@@ -63,6 +70,7 @@ const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onE
                     startTime: startTime,
                     endTime: endTime,
                     errorMessage: null,
+                    description: selectedTimeslot.description,
                     operation: TimeslotService.isSlotReserved(selectedTimeslot) ? 'canceling' : 'reservation'
                 })}
                 setShowSubmitButtonLoad(false);
@@ -109,6 +117,16 @@ const OneTimeReservationForm = ({timeslots, selectedTimeslot, onReservation, onE
                                 })}
                         </>
                     </select>
+                </div>
+                <div className='form-control'>
+                    <label>Poznámka</label>
+                    <input
+                        onChange={(e) => onDescriptionChange(e)}
+                        type='text'
+                        placeholder='Zobrazí sa v rozpise'
+                        value={selectedTimeslot.description}
+                        maxLength={255}
+                    />
                 </div>
 
                 {/*<input className={'btn'} type='submit' value className='btn btn-block'/>*/}

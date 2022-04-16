@@ -1,34 +1,24 @@
 import {BehaviorSubject} from "rxjs";
 import {RESERVATION_PARAMS} from "./Constants";
+
 const reservationCountSubject = new BehaviorSubject(0);
 
 const TimeslotService = {
-    getReservationCountObservable: function(){
+    getReservationCountObservable: function () {
         return reservationCountSubject.asObservable();
     },
-    getReservationCountValueSubject: function(){
+    getReservationCountValueSubject: function () {
         return reservationCountSubject;
     },
     removeFromReservedTimeslots: function (reservations, slotsToRemove) {
-        let updatedReservedSlots = {}
-        Object.keys(reservations).forEach(courtNo => {
-                const filteredSlots = reservations[courtNo].filter(timeslot =>{
-                    return !slotsToRemove.map(slot => slot.slotId).includes(timeslot.slotId);}
-                );
-                if (filteredSlots.length > 0) {
-                    updatedReservedSlots[courtNo] = filteredSlots;
-                }
+        let slotIdsToRemove = slotsToRemove.map(slot => slot.slotId);
+
+        return reservations.filter(timeslot => {
+                return !slotIdsToRemove.includes(timeslot.slotId);
             }
         );
-
-        // Object.keys(updatedReservedSlots).forEach(courtNo => {
-        //     if (updatedReservedSlots[courtNo].length == 0) {
-        //         delete updatedReservedSlots[courtNo];
-        //     }
-        // });
-        return updatedReservedSlots;
     },
-    countReservationsByUser: function(timeslots,myusername){
+    countReservationsByUser: function (timeslots, myusername) {
         let filteredTimeslots = {}
 
         Object.keys(timeslots).forEach(courtNo => {
@@ -36,8 +26,8 @@ const TimeslotService = {
             timeslots[courtNo].forEach(timeslot => {
                 if (timeslot.username === myusername)
                     filteredTimeslots[courtNo].push(timeslot);
-                });
             });
+        });
 
         return this.countTimeslots(this.groupReservedTimeslots(filteredTimeslots));
     },
@@ -66,9 +56,10 @@ const TimeslotService = {
         let counter = 0;
         Object.keys(timeslots).forEach(courtNo => {
             timeslots[courtNo].forEach(timeslotArray => {
-                counter ++;
-            })});
-            return counter;
+                counter++;
+            })
+        });
+        return counter;
     },
     getTimeslotsByDayMonth: function (timeslots, day, month) {
         let filteredTimeslots = {}
@@ -135,12 +126,23 @@ const TimeslotService = {
         });
         return timeslotIdsForTimeRange;
     },
+    getSlotsAfterSelectedTimeslot: function(timeslots, selectedTimeslot) {
+        const timeslotsForSelectedDay = this.getTimeslotsByDateAndCourt(timeslots, new Date(selectedTimeslot.startTime), selectedTimeslot.courtnumber);
+        let startIndex = null;
+        for (let i = 0; i < timeslotsForSelectedDay.length; i++) {
+            if (timeslotsForSelectedDay[i].slotId === selectedTimeslot.slotId) {
+                startIndex = i;
+                break;
+            }
+        }
+        return timeslotsForSelectedDay.slice(startIndex);
+    },
     getVacantSlotsAfterSelectedTimeslot: function (timeslots, reservedTimeslots, selectedTimeslot) {
         const timeslotsForSelectedDay = this.getTimeslotsByDateAndCourt(timeslots, new Date(selectedTimeslot.startTime), selectedTimeslot.courtnumber);
         let vacantSlotsAfterSelectedTimeslot = []
         let vacantSlotFound = false;
         for (let i = 0; i < timeslotsForSelectedDay.length; i++) {
-            if (vacantSlotFound && !this.isGeneratedSlotVacant (timeslotsForSelectedDay[i], reservedTimeslots ) ){
+            if (vacantSlotFound && !this.isGeneratedSlotVacant(timeslotsForSelectedDay[i], reservedTimeslots)) {
                 break;
             }
             if (timeslotsForSelectedDay[i].slotId >= selectedTimeslot.slotId) {
@@ -150,23 +152,23 @@ const TimeslotService = {
         }
         return vacantSlotsAfterSelectedTimeslot;
     },
-    isGeneratedSlotVacant: function(timeslot, reservedTimeslots) {
+    isGeneratedSlotVacant: function (timeslot, reservedTimeslots) {
         let slotVacant = true;
         Object.keys(reservedTimeslots).forEach(courtNumber => {
             reservedTimeslots[courtNumber].forEach(reservedSlot => {
-                    const timeslotStartDateTime = new Date(timeslot.startTime);
-                    const timeslotEndDateTime = new Date(timeslot.endTime);
-                    const reservedslotStartDateTime = new Date(reservedSlot.startTime);
-                    const reservedslotEndDateTime = new Date(reservedSlot.endTime);
+                const timeslotStartDateTime = new Date(timeslot.startTime);
+                const timeslotEndDateTime = new Date(timeslot.endTime);
+                const reservedslotStartDateTime = new Date(reservedSlot.startTime);
+                const reservedslotEndDateTime = new Date(reservedSlot.endTime);
 
-                    if (reservedSlot.courtnumber === timeslot.courtnumber &&
-                        reservedslotStartDateTime.getDate() === timeslotStartDateTime.getDate() &&
-                        reservedslotStartDateTime.getMonth() === timeslotStartDateTime.getMonth() &&
-                        timeslotStartDateTime.getTime() >= reservedslotStartDateTime.getTime() &&
-                        timeslotEndDateTime.getTime()  <= reservedslotEndDateTime.getTime()
-                    ) {
-                        slotVacant = false
-                    }
+                if (reservedSlot.courtnumber === timeslot.courtnumber &&
+                    reservedslotStartDateTime.getDate() === timeslotStartDateTime.getDate() &&
+                    reservedslotStartDateTime.getMonth() === timeslotStartDateTime.getMonth() &&
+                    timeslotStartDateTime.getTime() >= reservedslotStartDateTime.getTime() &&
+                    timeslotEndDateTime.getTime() <= reservedslotEndDateTime.getTime()
+                ) {
+                    slotVacant = false
+                }
             });
         })
         return slotVacant;
@@ -196,33 +198,35 @@ const TimeslotService = {
     formatDateShort: function (date) {
         return `${date.getHours()}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`
     },
-    getDayOfWeek: function(date){
-       return date.toLocaleDateString("sk-SK", { weekday: 'long' });
+    getDayOfWeek: function (date) {
+        return date.toLocaleDateString("sk-SK", {weekday: 'long'});
     },
-    formatDateMonthDay: function (date){
+    formatDateMonthDay: function (date) {
         date = new Date(Date.parse(date))
         return `${date.getDate()}.${date.getMonth() + 1}.`
     },
     formatDate: function (date) {
-        return `${date.getDate()}.${date.getMonth() + 1} ${date.getHours()}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`
+        const utcOffset = date.getTimezoneOffset();
+        const hours = date.getUTCHours() - utcOffset/60;
+        return `${date.getDate()}.${date.getMonth() + 1} ${hours}:${date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()}`
     },
-    formatDateLongTermReservation: function(hoursInUTC,minutes, dayofweek){
+    formatDateLongTermReservation: function (date, hoursInUTC, minutes, dayofweek) {
         const utcOffset = new Date().getTimezoneOffset();
-        const hours = hoursInUTC - 60 / utcOffset;
-        if(!isNaN(dayofweek)){
-            const daysOfWeek = ['pondelok','utorok', 'streda', 'štvrtok', 'piatok', 'sobota','nedeľa']
-            dayofweek =daysOfWeek[dayofweek-1]
+        const hours = hoursInUTC - utcOffset / 60;
+        if (!isNaN(dayofweek)) {
+            const daysOfWeek = ['pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota', 'nedeľa']
+            dayofweek = daysOfWeek[dayofweek - 1]
         }
         return `${dayofweek} ${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
     },
-    formatDateLongTermReservationLong: function(reservation){
-        const utcOffset = new Date().getTimezoneOffset();
-        const startHour = reservation.startHour - 60/utcOffset;
-        const endHour = reservation.endHour - 60/utcOffset;
+    formatDateLongTermReservationLong: function (reservation) {
+        const utcOffset = new Date(reservation.startDate).getTimezoneOffset();
+        const startHour = reservation.startHour - utcOffset / 60 ;
+        const endHour = reservation.endHour - utcOffset / 60;
         let dayofweek;
-        if(!isNaN(reservation.dayOfWeek)){
-            const daysOfWeek = ['pondelok','utorok', 'streda', 'štvrtok', 'piatok', 'sobota','nedeľa']
-            dayofweek =daysOfWeek[reservation.dayOfWeek-1]
+        if (!isNaN(reservation.dayOfWeek)) {
+            const daysOfWeek = ['pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota', 'nedeľa']
+            dayofweek = daysOfWeek[reservation.dayOfWeek - 1]
         }
         return `${dayofweek} ${startHour}:${reservation.startMinutes < 10 ? '0' + reservation.startMinutes : reservation.startMinutes}-${endHour}:${reservation.endMinutes < 10 ? '0' + reservation.endMinutes : reservation.endMinutes} od ${TimeslotService.formatDateMonthDay(reservation.startDate)} do ${TimeslotService.formatDateMonthDay(reservation.endDate)}`;
     },
@@ -232,31 +236,31 @@ const TimeslotService = {
     },
 
 
-    generateTimetableData: function (startHour, endHour, noOfDays, noOfCourts){
-        let currentDateTime;
+    generateTimetableData: function (startDate, startHour, endHour, noOfDays, noOfCourts) {
         let timeslotStartDateTime;
         let timeslotEndDateTime;
         let timetableData = {}
         let formattedDates = []
         let timeslots = {}
         let slotId = 1;
-        Date.prototype.addDays = function(days) {
+        let currentDate;
+        Date.prototype.addDays = function (days) {
             let date = new Date(this.valueOf());
             date.setDate(date.getDate() + days);
             return date;
         }
         for (let court = 1; court <= noOfCourts; court++) {
             timeslots[court] = [];
-            currentDateTime = new Date();
+            currentDate = startDate;
             for (let day = 1; day <= noOfDays; day++) {
-                if(court === 1) {
-                    formattedDates.push(`${this.formatDateMonthDay(currentDateTime)} (${this.getDayOfWeek(currentDateTime)})`);
+                if (court === 1) {
+                    formattedDates.push(currentDate);
                 }
                 for (let hour = startHour; hour < endHour; hour++) {
-                    timeslotStartDateTime = new Date(currentDateTime);
-                    timeslotStartDateTime.setHours(hour,0,0,0);
-                    timeslotEndDateTime = new Date(currentDateTime);
-                    timeslotEndDateTime.setHours(hour,30,0, 0);
+                    timeslotStartDateTime = new Date(currentDate);
+                    timeslotStartDateTime.setHours(hour, 0, 0, 0);
+                    timeslotEndDateTime = new Date(currentDate);
+                    timeslotEndDateTime.setHours(hour, 30, 0, 0);
 
                     timeslots[court].push({
                         courtnumber: court,
@@ -268,22 +272,23 @@ const TimeslotService = {
                         slotId: slotId++
                     })
 
-                    timeslotStartDateTime = new Date(currentDateTime);
-                    timeslotStartDateTime.setHours(hour,30,0,0);
-                    timeslotEndDateTime = new Date(currentDateTime);
-                    timeslotEndDateTime.setHours(hour+1,0,0,0);
+                    timeslotStartDateTime = new Date(currentDate);
+                    timeslotStartDateTime.setHours(hour, 30, 0, 0);
+                    timeslotEndDateTime = new Date(currentDate);
+                    timeslotEndDateTime.setHours(hour + 1, 0, 0, 0);
 
                     timeslots[court].push({
                         courtnumber: court,
                         dayOfWeek: timeslotStartDateTime.getDay(),
                         startTime: timeslotStartDateTime.toISOString(),
                         endTime: timeslotEndDateTime.toISOString(),
+                        description: null,
                         username: null,
                         price: null,
                         slotId: slotId++
                     })
                 }
-                currentDateTime = currentDateTime.addDays(1);
+                currentDate = currentDate.addDays(1);
             }
 
 
@@ -294,7 +299,7 @@ const TimeslotService = {
         return timetableData;
 
     },
-    addReservedTimeslotsToTimetable: function(generatedSlots, reservedSlots){
+    addReservedTimeslotsToTimetable: function (generatedSlots, reservedSlots) {
         Object.keys(reservedSlots).forEach(courtNumber => {
             reservedSlots[courtNumber].forEach(reservedSlot => {
                 generatedSlots[courtNumber].forEach((timeslot) => {
@@ -306,7 +311,7 @@ const TimeslotService = {
                     if (reservedslotStartDateTime.getDate() === timeslotStartDateTime.getDate() &&
                         reservedslotStartDateTime.getMonth() === timeslotStartDateTime.getMonth() &&
                         timeslotStartDateTime.getTime() >= reservedslotStartDateTime.getTime() &&
-                        timeslotEndDateTime.getTime()  <= reservedslotEndDateTime.getTime()
+                        timeslotEndDateTime.getTime() <= reservedslotEndDateTime.getTime()
                     ) {
                         timeslot.username = reservedSlot.username;
                     }
@@ -314,18 +319,19 @@ const TimeslotService = {
             });
         })
     },
-    addColumnAndRowToReservedSlots: function(reservedslots){
+    addColumnAndRowToReservedSlots: function (reservedslots) {
         Object.keys(reservedslots).forEach(courtNumber => {
-            reservedslots[courtNumber].forEach(slot =>{
-            const startHours = new Date(slot.startTime).getHours();
-            const startMinutes = new Date(slot.startTime).getMinutes();
-            const endHours = new Date(slot.endTime).getHours();
-            const endMinutes = new Date(slot.endTime).getMinutes();
-            slot.row = slot.courtnumber+1;
-            slot.column = (startHours - RESERVATION_PARAMS.startHour) * 2 + (startMinutes/30)+2;
-            slot.columnEnd = (endHours - RESERVATION_PARAMS.startHour) * 2 + (endMinutes/30)+2;
+            reservedslots[courtNumber].forEach(slot => {
+                const utcOffset = new Date(slot.startTime).getTimezoneOffset();
+                const startHours = new Date(slot.startTime).getUTCHours() - utcOffset/60;
+                const startMinutes = new Date(slot.startTime).getMinutes();
+                const endHours = new Date(slot.endTime).getUTCHours() - utcOffset/60;
+                const endMinutes = new Date(slot.endTime).getMinutes();
+                slot.row = slot.courtnumber + 1;
+                slot.column = (startHours - RESERVATION_PARAMS.startHour) * 2 + (startMinutes / 30) + 2;
+                slot.columnEnd = (endHours - RESERVATION_PARAMS.startHour) * 2 + (endMinutes / 30) + 2;
+            });
         });
-    });
         return reservedslots;
     }
 

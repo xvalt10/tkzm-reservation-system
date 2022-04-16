@@ -18,7 +18,7 @@ const Login = () => {
     let navigate = useNavigate();
     const [userMessage , setUserMessage] = useState(null);
     const [showSignUpForm, setShowSignUpForm] = useState(false);
-    const [showSignInForm, setShowSignInForm] = useState(false);
+    const [showSignInForm, setShowSignInForm] = useState(true);
 
     let signUpSelectedClass = showSignUpForm ? 'is-info' : '';
     let signInSelectedClass = showSignInForm ? 'is-info' : '';
@@ -49,48 +49,17 @@ const Login = () => {
 
     return (
         <>
-            <h3 className="title">Rezervačný systém TK Zlaté Moravce</h3>
-            <div className={'columns'}>
-
-
-                <div data-v-23847e07="" className={`column is-flex ${signUpSelectedClass}`}>
-                    <a data-v-23847e07="" onClick={toggleShowSignUpForm}
-                       className="card is-rounded container">
-                        <div className={'is-flex'}>
-                            <img className={'user-img'} src={newUserImage} alt={'Registracia'}/>
-                        </div>
-                        <div className="card-content">
-                            <div className="content"><p className="title is-4">Nový používateľ</p><p>
-                                Prejsť na registračný formulár
-                            </p></div>
-                        </div>
-                    </a>
-                </div>
-
-                <div data-v-23847e07="" className={`column is-flex ${signInSelectedClass}`}>
-                    <a data-v-23847e07="" onClick={toggleShowSignInForm}
-                       className="card is-rounded container">
-                        <div className="is-flex">
-                            <img className={'user-img'} src={existingUserImage} alt={'Prihlásenie'}/>
-                        </div>
-                        <div className="card-content">
-                            <div className="content"><p className="title is-4">Existujúci používateľ</p><p>
-                                Prihlásiť sa do systému
-                            </p></div>
-                        </div>
-                    </a>
-                </div>
-
-            </div>
             {userMessage && <UserMessage message={userMessage} color={'light-green'}/>}
             {isMobile && <Modal isOpen={showSignInForm || showSignUpForm} style={MODAL_CUSTOM_STYLES} appElement={document.getElementById('root')}>
+                <div className={'scroll-component'}>
                 <FontAwesomeIcon onClick={()=>{setShowSignUpForm(false);setShowSignInForm(false)}} icon={faWindowClose} style={{marginRight:'5px',cursor:'pointer'}}/>
-                {showSignInForm && <SignInForm/>}
-                {showSignUpForm && <SignUpForm/>}
+                {showSignInForm && <SignInForm onShowRegisterForm={toggleShowSignUpForm}/>}
+                {showSignUpForm && <SignUpForm onRegistrationSuccessful={onRegistrationSuccessful} onSingUpBackButton={toggleShowSignInForm}/>}
+                </div>
             </Modal>}
 
-            {!isMobile && showSignInForm && <SignInForm/>}
-            {!isMobile && showSignUpForm && <SignUpForm onRegistrationSuccessful={onRegistrationSuccessful}/>}
+            {!isMobile && showSignInForm && <SignInForm onShowRegisterForm={toggleShowSignUpForm}/>}
+            {!isMobile && showSignUpForm && <SignUpForm onRegistrationSuccessful={onRegistrationSuccessful} onSingUpBackButton={toggleShowSignInForm}/>}
         </>
     );
 }

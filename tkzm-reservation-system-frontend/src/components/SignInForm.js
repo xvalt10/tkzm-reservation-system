@@ -6,9 +6,15 @@ import UserMessage from "./UserMessage";
 import {BACKEND_BASE_URL} from "../services/Constants";
 import TimeslotService from "../services/TimeslotService";
 import ButtonWithSpinner from "./ButtonWithSpinner";
+import {useNavigate} from "react-router-dom";
+import Loader from "react-loader-spinner";
+import logo_small from "../images/tkzm_logo_32.png";
+import logo_medium from "../images/tkzm_logo_64.png";
+import logo_large from "../images/tkzm_logo3.png";
 
-const SignInForm = ({onUserNotConfirmed}) => {
+const SignInForm = ({onUserNotConfirmed, onShowRegisterForm}) => {
     let authenticationErrorSubscription;
+    let navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [facebookButtonSpinner, setFacebookButtonSpinner] = useState(false);
@@ -65,6 +71,10 @@ const SignInForm = ({onUserNotConfirmed}) => {
             });
 
     }
+
+    const onRegisterUserButtonClick = () => {
+        onShowRegisterForm();
+    }
     const signInViaForm = (e) => {
         setSignInFinished(false);
         setError(null);
@@ -80,7 +90,7 @@ const SignInForm = ({onUserNotConfirmed}) => {
                 let username = user.attributes.name ? `${user.attributes.name} ${user.attributes.family_name}` : user.username;
                 accountService.accountSubject.next({name: username});
                 getTimetableData();
-
+                navigate('/welcome');
             })
             .catch((err) => {
                 setSignInFinished(true);
@@ -102,6 +112,8 @@ const SignInForm = ({onUserNotConfirmed}) => {
     };
     return (
         <div className={'box flex-column-container'}>
+            <a href="/" className="navbar-item active"><img
+                srcSet={`${logo_small} 300w, ${logo_medium} 768w, ${logo_large} 1280w`} alt="Favicon.io Logo" style={{maxWidth:'85px'}}/><span className={'title is-5'}>TK ZM - Rezervácie</span></a>
             <h3 className={'subtitle'}>Prihlásenie do rezervačného systému</h3>
             {error && <UserMessage message={error} color={'red'}/>}
             <div style={{'borderBottom': '1px solid black', 'paddingBottom': '0.7rem'}}>
@@ -110,7 +122,7 @@ const SignInForm = ({onUserNotConfirmed}) => {
                                        text={'Prihlásiť sa cez Facebook'}/>
                 </div>
             </div>
-            <div className="flex-row-container">
+            <div style={{'borderBottom': '1px solid black', 'paddingBottom': '0.7rem', marginBottom:'10px'}}>
                 <div className="form is-spaced">
                     <form>
                         <div className='form-control'>
@@ -140,6 +152,10 @@ const SignInForm = ({onUserNotConfirmed}) => {
                 </div>
 
             </div>
+            <div className="flex-row-container">
+                <button className="button fullwidth" onClick={onRegisterUserButtonClick}>Registrácia nového používateľa
+                </button>
+                </div>
         </div>
     );
 };

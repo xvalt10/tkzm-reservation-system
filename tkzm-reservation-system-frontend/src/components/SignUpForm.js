@@ -3,8 +3,11 @@ import {Auth} from "aws-amplify";
 import UserMessage from "./UserMessage";
 import UserConfirmationForm from "./UserConfirmationForm";
 import Loader from "react-loader-spinner";
+import logo_small from "../images/tkzm_logo_32.png";
+import logo_medium from "../images/tkzm_logo_64.png";
+import logo_large from "../images/tkzm_logo3.png";
 
-const SignUpForm = ({onRegistrationSuccessful}) => {
+const SignUpForm = ({onRegistrationSuccessful, onSingUpBackButton}) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [firstname, setFirstname] = useState("");
@@ -51,6 +54,7 @@ const SignUpForm = ({onRegistrationSuccessful}) => {
         }
 
     };
+
     const confirmSignUp = (e, code) => {
         e.preventDefault();
         setError(null);
@@ -92,6 +96,10 @@ const SignUpForm = ({onRegistrationSuccessful}) => {
         setError(null);
     }
 
+    const onBackButtonClicked = () => {
+        onSingUpBackButton();
+    }
+
     const passwordsMatch = () => {
         return password === confirmationPassword;
     };
@@ -105,6 +113,8 @@ const SignUpForm = ({onRegistrationSuccessful}) => {
     };
     return (
         <div className="box form">
+            <a href="/" className="navbar-item active"><img
+                srcSet={`${logo_small} 300w, ${logo_medium} 768w, ${logo_large} 1280w`} alt="Favicon.io Logo" style={{maxWidth:'85px'}}/><span className={'title is-5'}>TK ZM - Rezervácie</span></a>
             <h3 className={'subtitle'}>Registrácia užívateľa</h3>
             {info && <UserMessage message={info} color={'light-green'}/>}
             {error && <UserMessage message={error} color={'red'}/>}
@@ -161,21 +171,26 @@ const SignUpForm = ({onRegistrationSuccessful}) => {
                             placeholder="password"
                         />
                     </div>
-                    <button className="button is-rounded is-info" type="submit" onClick={signUp}>
-                        <div style={{display: 'flex', alignItems: 'center'}}>
-                            {showUserRegistrationSpinner && <Loader
-                                type="TailSpin"
-                                color="#00BFFF"
-                                height={'30px'}
-                                width={'30px'}
-                            />}
-                            <div style={{marginLeft: '10px'}}>Zaregistrovať nového používateľa</div>
-                        </div>
+                    <div>
+                        <button className="button is-info fullwidth" type="submit" onClick={signUp}>
+                            <div style={{display: 'flex', alignItems: 'center'}}>
+                                {showUserRegistrationSpinner && <Loader
+                                    type="TailSpin"
+                                    color="#00BFFF"
+                                    height={'30px'}
+                                    width={'30px'}
+                                />}
+                                <div style={{marginLeft: '10px'}}>Zaregistrovať nového používateľa</div>
+                            </div>
+
+                        </button>
+                            <button className="button fullwidth" onClick={onBackButtonClicked}>Naspät</button>
+
+                    </div>
 
 
 
-                    </button>
-                    {showSendCodeButton && <button className="button is-rounded is-info" onClick={displayVerificationCodeForm}>Zaslať verifikačný kód</button>}
+                    {showSendCodeButton && <button className="button is-info" onClick={displayVerificationCodeForm}>Zaslať verifikačný kód</button>}
                 </form>
             )}
             {waitingForCode &&

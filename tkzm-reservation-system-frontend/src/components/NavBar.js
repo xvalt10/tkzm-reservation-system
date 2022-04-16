@@ -10,6 +10,8 @@ import { faSignOutAlt} from '@fortawesome/free-solid-svg-icons'
 import TimeslotService from "../services/TimeslotService";
 import {Auth} from "aws-amplify";
 const Navbar = () => {
+    let reservationCountSubscription;
+    let accountSubscription;
     const navigate = useNavigate();
     const [showMenuItems,setShowMenuItems] = useState(false);
     const [account, setAccount] = useState(null);
@@ -22,8 +24,12 @@ const Navbar = () => {
         setShowMenuItems(!showMenuItems);
     }
     useEffect(() => {
-        TimeslotService.getReservationCountObservable().subscribe(count => setMyReservationsCount(count))
-        accountService.account.subscribe(x => setAccount(x));
+        reservationCountSubscription = TimeslotService.getReservationCountObservable().subscribe(count => setMyReservationsCount(count))
+        accountSubscription = accountService.account.subscribe(x => setAccount(x));
+        return () => {
+            reservationCountSubscription.unsubscribe();
+            accountSubscription.unsubscribe();
+        }
     }, []);
     return (
         <>

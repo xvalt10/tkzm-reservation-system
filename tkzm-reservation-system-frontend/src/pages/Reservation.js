@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import Timetable from "../components/Timetable";
 import OneTimeReservationForm from "../components/OneTimeReservationForm";
-import {accountService} from "../services/auth/AuthService";
+import {accountService as userAccountService, accountService} from "../services/auth/AuthService";
 import TimeslotService from "../services/TimeslotService";
 import {useNavigate} from "react-router-dom";
 import UserMessage from "../components/UserMessage";
@@ -12,18 +12,26 @@ import LongtermReservationForm from "../components/LongtermReservationForm";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faWindowClose} from "@fortawesome/free-solid-svg-icons";
 import {isMobile} from "react-device-detect";
+import DatePicker from "react-datepicker";
+import {registerLocale, setDefaultLocale} from "react-datepicker";
+import sk from 'date-fns/locale/sk';
+
+registerLocale('sk', sk)
 
 const Reservation = ({}) => {
     const navigate = useNavigate();
     const selectedDateSelectBox = useRef(null);
+    const moreDaysAtOnceRadioButton = useRef(null);
+
     let loadDataIntervalId = null;
+    const [isDatePickerOpen, setDatePickerOpen] = useState(false);
     const [timeslots, setTimeslots] = useState(null);
     const [timeslotsArray, setTimeslotsArray] = useState([]);
     const [reservedSlotsArray, setReservedSlotsArray] = useState([]);
     const [reservedSlots, setReservedSlots] = useState({});
     const [viewMode, setViewMode] = useState(VIEW_MODES.ONEDAY);
     const [reservedSlotsPerDay, setReservedSlotsPerDay] = useState([]);
-    const [selectedDate, setSelectedDate] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
     const [timeslotsPerDay, setTimeslotsPerDay] = useState({});
     const [reservationStatus, setReservationStatus] = useState(null);
     const [selectedTimeslot, setSelectedTimeslot] = useState(null);
@@ -37,9 +45,8 @@ const Reservation = ({}) => {
     }
 
     function filterSlotsForDate(timeslots, date) {
-        const datetokens = date.split(" ")[0].split(".");
-        const day = +datetokens[0];
-        const month = +datetokens[1];
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
         return TimeslotService.getTimeslotsByDayMonth(timeslots, day, month);
     }
 
@@ -54,25 +61,38 @@ const Reservation = ({}) => {
         setReservedSlotsArray(groupedReservedslots)
     }
 
-    function loadTimetableData() {
+    function pickDate(e) {
+        e.preventDefault();
+        setDatePickerOpen(!isDatePickerOpen);
+    }
+
+    function generateTimeslots(selectedDate, viewMode) {
+        let generatedTimeslots = TimeslotService.generateTimetableData(selectedDate, 6, 22, viewMode === VIEW_MODES.ONEDAY ? 1 : 7, 5);
+        setTimeslots(generatedTimeslots.timeslots);
+        setDatesForReservation(generatedTimeslots.dates);
+
+        return generatedTimeslots;
+    }
+
+    function loadTimetableData(startingDate) {
+        const currentViewMode = (moreDaysAtOnceRadioButton.current && moreDaysAtOnceRadioButton.current.checked) ? VIEW_MODES.SEVENDAYS : VIEW_MODES.ONEDAY;
+        const currentDate = startingDate ? startingDate : new Date(selectedDateSelectBox.current.value);
+
         const getTimetableData = async () => {
             let reservedSlots = {}
-            await fetch(`${BACKEND_BASE_URL}/timeslots/byCourt`)
+            await fetch(`${BACKEND_BASE_URL}/timeslots/byCourt/startTime/${currentDate.getTime()}/days/14`)
                 .then(res => res.json())
                 .then(reservedSlotsFromServer => {
-
+                        console.log("Loaded data for the next 14 days starting from:" + currentDate.toISOString())
+                        console.log(reservedSlotsFromServer);
                         reservedSlots = TimeslotService.addColumnAndRowToReservedSlots(reservedSlotsFromServer);
                         TimeslotService.getReservationCountValueSubject().next(TimeslotService.countReservationsByUser(reservedSlots, accountService.accountValue.name));
-                        let {timeslots, dates} = TimeslotService.generateTimetableData(6, 22, 14, 5);
-
-                        setTimeslots(timeslots);
-                        setDatesForReservation(dates);
+                        let generatedSlots = generateTimeslots(currentDate, currentViewMode);
                         setReservedSlots(reservedSlots);
-                        if (viewMode === VIEW_MODES.ONEDAY) {
-                            setSelectedDate(prevSelectedDate => prevSelectedDate == null ? dates[0] : prevSelectedDate);
-                            displayTimeslotsForSelectedDay(timeslots, reservedSlots, dates[selectedDateSelectBox.current ? selectedDateSelectBox.current.selectedIndex : 0]);
-                        }else{
-                            loadMultipleTimetables(dates, timeslots, reservedSlots);
+                        if (currentViewMode === VIEW_MODES.ONEDAY) {
+                            displayTimeslotsForSelectedDay(generatedSlots.timeslots, reservedSlots, generatedSlots.dates[0]);
+                        } else {
+                            loadMultipleTimetables(generatedSlots.dates, generatedSlots.timeslots, reservedSlots);
                         }
                         setError(null);
                     }
@@ -99,9 +119,17 @@ const Reservation = ({}) => {
         }
     }, [])
 
-    const onReservationDateChanged = (event) => {
-        setSelectedDate(datesForReservation[event.target.selectedIndex]);
-        displayTimeslotsForSelectedDay(timeslots, reservedSlots, datesForReservation[event.target.selectedIndex]);
+    const onReservationDateChanged = (date) => {
+        setDatePickerOpen(false);
+        setSelectedDate(date);
+        // let generatedSlots = generateTimeslots(date, viewMode);
+        loadTimetableData(date);
+
+        // if (viewMode === VIEW_MODES.ONEDAY) {
+        //     displayTimeslotsForSelectedDay(generatedSlots.timeslots, reservedSlots, generatedSlots.dates[0]);
+        // } else {
+        //     loadMultipleTimetables(generatedSlots.dates, generatedSlots.timeslots, reservedSlots);
+        // }
     }
 
     const onReservationTypeChanged = (event) => {
@@ -114,8 +142,8 @@ const Reservation = ({}) => {
             timeslot.selected = true
             setSelectedTimeslot(timeslot);
 
-            if (viewMode === VIEW_MODES.FIVEDAYS) {
-                setTimeslotsPerDay(TimeslotService.markTimeslots(filterSlotsForDate(timeslots, TimeslotService.formatDateMonthDay(timeslot.startTime)), [timeslot.slotId]));
+            if (viewMode === VIEW_MODES.SEVENDAYS) {
+                setTimeslotsPerDay(TimeslotService.markTimeslots(filterSlotsForDate(timeslots, new Date(timeslot.startTime)), [timeslot.slotId]));
             } else {
                 setTimeslotsPerDay(TimeslotService.markTimeslots(timeslotsPerDay, [timeslot.slotId]))
             }
@@ -148,13 +176,20 @@ const Reservation = ({}) => {
         setSelectedTimeslot(null);
     }
 
+    const addDays = (date, days) => {
+        date.setDate(date.getDate() + days);
+        return date;
+    }
+
     const onViewModeChanged = (e) => {
-        setViewMode(e.target.value);
-        if (e.target.value === VIEW_MODES.ONEDAY) {
-            setSelectedDate(prevSelectedDate => prevSelectedDate == null ? datesForReservation[0] : prevSelectedDate);
-            displayTimeslotsForSelectedDay(timeslots, reservedSlots, datesForReservation[selectedDateSelectBox.current ? selectedDateSelectBox.current.selectedIndex : 0]);
-        }else{
-            loadMultipleTimetables(datesForReservation, timeslots, reservedSlots);
+        let newViewMode = e.target.value;
+        setViewMode(newViewMode);
+        let generatedSlots = generateTimeslots(selectedDate, newViewMode);
+        if (newViewMode === VIEW_MODES.ONEDAY) {
+            setSelectedDate(prevSelectedDate => prevSelectedDate == null ? generatedSlots.dates[0] : prevSelectedDate);
+            displayTimeslotsForSelectedDay(generatedSlots.timeslots, reservedSlots, generatedSlots.dates[0]);
+        } else {
+            loadMultipleTimetables(generatedSlots.dates, generatedSlots.timeslots, reservedSlots);
         }
     }
 
@@ -183,7 +218,7 @@ const Reservation = ({}) => {
     }
 
     return (
-        <div>
+        <>
 
             {!timeslots && <h4 className={'user-message'}><Loader
                 type="TailSpin"
@@ -192,7 +227,7 @@ const Reservation = ({}) => {
                 width={'30px'}/>Dáta sa načítavajú</h4>
             }
 
-            <div className="form-control-check">
+            {timeslots && <div className="form-control-check">
                 <h3 id={"reservation-page-title"} className={'title'}
                     style={{fontSize: !isMobile ? "1.5rem" : "2rem"}}>Rozpis</h3>
                 <div style={{
@@ -205,59 +240,68 @@ const Reservation = ({}) => {
                     <div>
                         <label>Typ zobrazenia</label>
                     </div>
-                    <div style={{display:'flex',alignItems:'center'}}>
+                    <div style={{display: 'flex', alignItems: 'center'}}>
                         <input type="radio" value={VIEW_MODES.ONEDAY} name="view-mode-one-day"
                                checked={viewMode === VIEW_MODES.ONEDAY} onChange={(e) => onViewModeChanged(e)}/> <span
                         style={{marginRight: '5px'}}>1 deň</span>
-                        <input type="radio" value={VIEW_MODES.FIVEDAYS} name="view-mode-five-days"
-                               checked={viewMode === VIEW_MODES.FIVEDAYS} onChange={(e) => onViewModeChanged(e)}/>
-                        <span>14 dní</span>
+                        <input ref={moreDaysAtOnceRadioButton} type="radio" value={VIEW_MODES.SEVENDAYS}
+                               name="view-mode-five-days"
+                               checked={viewMode === VIEW_MODES.SEVENDAYS} onChange={(e) => onViewModeChanged(e)}/>
+                        <span>7 dní</span>
                     </div>
 
                 </div>
-            </div>
+            </div>}
 
             {error && <UserMessage message={error} color={'indianred'}/>}
             {reservationStatus && <h4 className={'user-message'}>{reservationStatus}</h4>}
 
-            {timeslots && viewMode === VIEW_MODES.ONEDAY && <div className='form-control'>
-                <label>Dátum rezervácie</label>
+            {timeslots &&
+            <div className='form-control'>
+                <label>Vyber dátum rezervácie</label>
 
-                <select ref={selectedDateSelectBox} onChange={(e) => onReservationDateChanged(e)}>
-                    <>
-                        {datesForReservation.map((uniqueDate, index) => {
-                            return <option key={index}>{uniqueDate}</option>
-                        })}</>
-                </select>
+                <button className="button is-rounded is-info" onClick={pickDate}>
+                    {selectedDate.getDate()}.{selectedDate.getMonth() + 1}.{selectedDate.getFullYear()}
+                </button>
+                {isDatePickerOpen && (
+                    <DatePicker selected={selectedDate} onChange={(date) => onReservationDateChanged(date)}
+                                dateFormat={'dd.MM.yyyy'}
+                                minDate={new Date()}
+                                inline locale="sk"/>
+                )}
             </div>}
 
-
+            <input ref={selectedDateSelectBox} type={'hidden'} value={selectedDate.toISOString()}/>
             {timeslots && viewMode === VIEW_MODES.ONEDAY &&
             <Timetable timeslots={timeslotsPerDay} onSelected={onTimeslotSelected}
                        reservedslots={reservedSlotsPerDay}/>}
 
-            {timeslots && viewMode === VIEW_MODES.FIVEDAYS &&
+            {timeslots && viewMode === VIEW_MODES.SEVENDAYS &&
             datesForReservation.map((date, index) => {
-                    return <div style={{marginBottom: '10px'}}>
-                        <h4>{date}</h4>
-                        <Timetable timeslots={timeslotsArray[index]}
-                                   onSelected={onTimeslotSelected}
-                                   reservedslots={reservedSlotsArray[index]}/></div>
+                return <div style={{marginBottom: '10px'}}>
+                    <h4>{date.getDate()}.{date.getMonth() + 1}.{date.getFullYear()} ({TimeslotService.getDayOfWeek(date)})</h4>
+                    <Timetable timeslots={timeslotsArray[index]}
+                               onSelected={onTimeslotSelected}
+                               reservedslots={reservedSlotsArray[index]}/></div>
             })
             }
 
 
             <Modal isOpen={selectedTimeslot !== null} style={MODAL_CUSTOM_STYLES}
                    appElement={document.getElementById('main-pane')}>
-                <FontAwesomeIcon onClick={closeModal} icon={faWindowClose} style={{marginRight: '5px', cursor: 'pointer'}}/>
-                {selectedTimeslot && !TimeslotService.isSlotReserved(selectedTimeslot) &&
+                <FontAwesomeIcon onClick={closeModal} icon={faWindowClose}
+                                 style={{marginRight: '5px', cursor: 'pointer'}}/>
+                {selectedTimeslot && (!TimeslotService.isSlotReserved(selectedTimeslot) || selectedTimeslot.username === userAccountService.accountValue.name) &&
                 <div className="containerTimeslotForm">
                     <div className="form-control-check" onChange={(e) => onReservationTypeChanged(e)}>
                         <label>Typ rezervácie</label>
                         <input type="radio" value={RESERVATION_TYPES.ONETIME} name="reservation-type"
                                checked={reservationType === RESERVATION_TYPES.ONETIME}/> Jednorázová
-                        <input type="radio" value={RESERVATION_TYPES.LONGTERM} name="reservation-type"
-                               checked={reservationType === RESERVATION_TYPES.LONGTERM}/> Dlhodobá
+                        {selectedTimeslot && !TimeslotService.isSlotReserved(selectedTimeslot) &&
+                        <>
+                            <input type="radio" value={RESERVATION_TYPES.LONGTERM} name="reservation-type"
+                                   checked={reservationType === RESERVATION_TYPES.LONGTERM}/> Dlhodobá </>
+                        }
                     </div>
                 </div>}
                 {selectedTimeslot && reservationType === RESERVATION_TYPES.ONETIME &&
@@ -271,7 +315,7 @@ const Reservation = ({}) => {
             </Modal>
 
 
-        </div>
+        </>
     );
 }
 
